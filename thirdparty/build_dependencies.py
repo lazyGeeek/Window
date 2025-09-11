@@ -29,9 +29,9 @@ def delete_libs_folders():
 def copy_libs(source: str):
     for path in glob.glob(source + '/**', recursive=True):
         if os.path.isfile(path):
-            if re.search(r'.(lib|dylib|a)$', path):
+            if re.search(r'\.(lib|dylib|a)$', path):
                 shutil.copy(path, libs_dir, follow_symlinks=False)
-            elif re.search(r'.(pdb|dll|so|so(\.\d{0,}){0,})$', path):
+            elif re.search(r'\.(pdb|dll|so|so(\.\d{0,}){0,})$', path):
                 shutil.copy(path, bins_dir, follow_symlinks=False)
 
 def glfw_build():
