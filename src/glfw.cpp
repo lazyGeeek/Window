@@ -271,6 +271,11 @@ namespace Window
         glfwMakeContextCurrent(m_window);
     }
 
+    void GLFW::ClearCurrentContext() const
+    {
+        glfwMakeContextCurrent(nullptr);
+    }
+
     Inputs::InputManager& GLFW::getInputManager() const
     {
         if (!m_inputManager)

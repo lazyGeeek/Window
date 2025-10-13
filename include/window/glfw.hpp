@@ -74,6 +74,7 @@ namespace Window
         void CloseWindow();
 
         void MakeCurrentContext() const;
+        void ClearCurrentContext() const;
 
         Utils::Event<int32_t, int32_t> ResizeEvent;
         Utils::Event<int32_t, int32_t> MoveEvent;
