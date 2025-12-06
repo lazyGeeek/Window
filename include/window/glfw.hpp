@@ -5,6 +5,9 @@
 #include <memory>
 #include <unordered_map>
 
+#ifdef WINDOW_USE_VULKAN
+#define GLFW_INCLUDE_VULKAN
+#endif
 #include <GLFW/glfw3.h>
 
 #include "window/settings/window_settings.hpp"
@@ -54,7 +57,10 @@ namespace Window
         bool IsResizable() const;
         bool IsDecorated() const;
 
+#ifndef WINDOW_USE_VULKAN
         void SwapBuffers() const;
+#endif
+
         void PollEvents() const;
 
         std::string GetTitle() const;

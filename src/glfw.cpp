@@ -3,6 +3,8 @@
 
 #include <stdexcept>
 
+#include <iostream>
+
 namespace Window
 {
     GLFW::GLFW(const Settings::WindowSettings& windowSettings, bool fullscreen) :
@@ -51,10 +53,14 @@ namespace Window
             throw std::runtime_error("Failed to Init GLFW");
         }
 
+#ifdef WINDOW_USE_VULKAN
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+#else
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#endif
+
         glfwWindowHint(GLFW_SAMPLES, windowSettings.Samples);
 
         GLFWmonitor* selectedMonitor = nullptr;
@@ -90,7 +96,10 @@ namespace Window
             SetFullscreen(true);
 
         glfwSetWindowUserPointer(m_window, this);
+
+#ifndef WINDOW_USE_VULKAN
         glfwMakeContextCurrent(m_window);
+#endif
     }
 
     void GLFW::bindKeyCallback() const
@@ -445,10 +454,12 @@ namespace Window
         return glfwGetWindowAttrib(m_window, GLFW_DECORATED) == GLFW_TRUE;
     }
 
+#ifndef WINDOW_USE_VULKAN
     void GLFW::SwapBuffers() const
     {
         glfwSwapBuffers(m_window);
     }
+#endif
     
     void GLFW::PollEvents() const
     {

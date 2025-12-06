@@ -1,7 +1,7 @@
 set(WINDOW_PROJECT "Window")
 
-if(WINDOW_REBUILD_THIRDPARTY)
-    execute_process(COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/build_dependencies.py")
+if(WINDOW_USE_VULKAN)
+    add_compile_definitions(WINDOW_USE_VULKAN)
 endif()
 
 file(
@@ -32,11 +32,10 @@ file(
 
 add_library(${WINDOW_PROJECT} SHARED ${WINDOW_CODE_LIST})
 
-target_compile_features(${WINDOW_PROJECT} PRIVATE cxx_std_17)
+target_compile_features(${WINDOW_PROJECT} PRIVATE cxx_std_20)
 target_include_directories(${WINDOW_PROJECT} PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include
-)
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include)
 target_link_libraries(${WINDOW_PROJECT} ${WINDOW_BINS_LIST})
 
 foreach(CODE_FILE IN ITEMS ${WINDOW_CODE_LIST})
