@@ -2,6 +2,7 @@ set(WINDOW_PROJECT "Window")
 
 if(WINDOW_USE_VULKAN)
     add_compile_definitions(WINDOW_USE_VULKAN)
+    find_package(Vulkan REQUIRED)
 endif()
 
 file(
@@ -33,10 +34,19 @@ file(
 add_library(${WINDOW_PROJECT} SHARED ${WINDOW_CODE_LIST})
 
 target_compile_features(${WINDOW_PROJECT} PRIVATE cxx_std_20)
-target_include_directories(${WINDOW_PROJECT} PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include)
-target_link_libraries(${WINDOW_PROJECT} ${WINDOW_BINS_LIST})
+
+if(WINDOW_USE_VULKAN)
+    target_link_libraries(${WINDOW_PROJECT} ${WINDOW_BINS_LIST} ${Vulkan_LIBRARIES})
+    target_include_directories(${WINDOW_PROJECT} PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include
+        ${Vulkan_INCLUDE_DIRS})
+else()
+    target_link_libraries(${WINDOW_PROJECT} ${WINDOW_BINS_LIST})
+    target_include_directories(${WINDOW_PROJECT} PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include)
+endif()
 
 foreach(CODE_FILE IN ITEMS ${WINDOW_CODE_LIST})
     get_filename_component(CODE_FILE_PATH "${CODE_FILE}" PATH)
