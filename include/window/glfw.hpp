@@ -10,17 +10,43 @@
 #endif
 #include <GLFW/glfw3.h>
 
-#include "window/settings/window_settings.hpp"
 #include "window/utils/event.hpp"
+#include "window/eventing/event_dispatcher.hpp"
 
 namespace Window
 {
     namespace Inputs { class InputManager; }
 
+    struct WindowInit
+    {
+        std::string Title = "";
+
+        int32_t Width     = 1280;
+        int32_t Height    = 720;
+        int32_t MinWidth  = -1;
+        int32_t MinHeight = -1;
+        int32_t MaxWidth  = -1;
+        int32_t MaxHeight = -1;
+        int32_t PosX      = -1;
+        int32_t PosY      = -1;
+
+        bool Fullscreen  = false;
+        bool Decorated   = true;
+        bool Resizable   = true;
+        bool Focused     = true;
+        bool Maximized   = false;
+        bool Floating    = false;
+        bool Visible     = true;
+        bool AutoIconify = true;
+
+        int32_t RefreshRate = -1;
+        uint32_t Samples = 4;
+    };
+
     class GLFW
     {
     public:
-        GLFW(const Settings::WindowSettings& windowSettings, bool fullscreen = false);
+        GLFW(const WindowInit& windowInit, bool fullscreen = false);
         virtual ~GLFW();
 
         GLFW(const GLFW& other)             = delete;
@@ -60,7 +86,6 @@ namespace Window
 #ifndef WINDOW_USE_VULKAN
         void SwapBuffers() const;
 #endif
-
         void PollEvents() const;
 
         std::string GetTitle() const;
@@ -82,23 +107,18 @@ namespace Window
         void MakeCurrentContext() const;
         void ClearCurrentContext() const;
 
-        Utils::Event<int32_t, int32_t> ResizeEvent;
-        Utils::Event<int32_t, int32_t> MoveEvent;
-        Utils::Event<int32_t, int32_t> FramebufferResizeEvent;
+        Eventing::Dispatcher Events;
 
-        Utils::Event<> MinimizeEvent;
-        Utils::Event<> MaximizeEvent;
-        Utils::Event<> RestoreEvent;
-        Utils::Event<> LostFocusEvent;
-        Utils::Event<> GainFocusEvent;
-        Utils::Event<> CloseEvent;
+        static const inline int32_t DONT_CARE = -1;
 
     private:
-        void createGLFWWindow(const Settings::WindowSettings& windowSettings);
+        void parseInit(const WindowInit& windowInit, bool fullscreen);
+        void createGLFWWindow();
 
         void bindKeyCallback() const;
         void bindMouseCallback() const;
         void bindCursorMoveCallback() const;
+        void bindScrollCallback() const;
         void bindResizeCallback() const;
         void bindFramebufferResizeCallback() const;
         void bindMoveCallback() const;
@@ -112,8 +132,29 @@ namespace Window
         GLFWwindow* m_window = nullptr;
         std::unique_ptr<Inputs::InputManager> m_inputManager;
 
-        Settings::WindowSettings m_settings;
-        bool m_fullscreen = false;
+        std::string m_title = "";
+
+        int32_t m_width     = 1280;
+        int32_t m_height    = 720;
+        int32_t m_minWidth  = DONT_CARE;
+        int32_t m_minHeight = DONT_CARE;
+        int32_t m_maxWidth  = DONT_CARE;
+        int32_t m_maxHeight = DONT_CARE;
+        int32_t m_posX      = DONT_CARE;
+        int32_t m_posY      = DONT_CARE;
+
+        bool m_fullscreen  = false;
+        bool m_decorated   = true;
+        bool m_resizable   = true;
+        bool m_focused     = true;
+        bool m_maximized   = false;
+        bool m_floating    = false;
+        bool m_visible     = true;
+        bool m_autoIconify = true;
+
+        int32_t m_refreshRate = DONT_CARE;
+        uint32_t m_samples = 4;
+
         bool m_vsync = false;
     };
 }

@@ -1,30 +1,30 @@
 #include "window/glfw.hpp"
 #include "window/inputs/input_manager.hpp"
 
+#include "window/eventing/window_events.hpp"
+#include "window/eventing/input_events.hpp"
+
 #include <stdexcept>
 
 #include <iostream>
 
 namespace Window
 {
-    GLFW::GLFW(const Settings::WindowSettings& windowSettings, bool fullscreen) :
-        m_settings{ windowSettings },
-        m_fullscreen { fullscreen }
+    GLFW::GLFW(const WindowInit& windowInit, bool fullscreen)
     {
-        createGLFWWindow(windowSettings);
+        parseInit(windowInit, fullscreen);
+        createGLFWWindow();
 
         bindKeyCallback();
         bindMouseCallback();
         bindCursorMoveCallback();
+        bindScrollCallback();
         bindIconifyCallback();
         bindCloseCallback();
         bindResizeCallback();
         bindFramebufferResizeCallback();
         bindMoveCallback();
         bindFocusCallback();
-
-        ResizeEvent.AddListener(std::bind(&GLFW::onResize, this, std::placeholders::_1, std::placeholders::_2));
-        MoveEvent.AddListener(std::bind(&GLFW::onMove, this, std::placeholders::_1, std::placeholders::_2));
 
         m_inputManager = std::make_unique<Inputs::InputManager>(this);
     }
@@ -38,7 +38,35 @@ namespace Window
         glfwTerminate();
     }
 
-    void GLFW::createGLFWWindow(const Settings::WindowSettings& windowSettings)
+    void GLFW::parseInit(const WindowInit& windowInit, bool fullscreen)
+    {
+        m_title = windowInit.Title;
+        
+        m_width     = windowInit.Width;
+        m_height    = windowInit.Height;
+        m_minWidth  = windowInit.MinWidth;
+        m_minHeight = windowInit.MinHeight;
+        m_maxWidth  = windowInit.MaxWidth;
+        m_maxHeight = windowInit.MaxHeight;
+        m_posX      = windowInit.PosX;
+        m_posY      = windowInit.PosY;
+        
+        m_fullscreen  = windowInit.Fullscreen;
+        m_decorated   = windowInit.Decorated;
+        m_resizable   = windowInit.Resizable;
+        m_focused     = windowInit.Focused;
+        m_maximized   = windowInit.Maximized;
+        m_floating    = windowInit.Floating;
+        m_visible     = windowInit.Visible;
+        m_autoIconify = windowInit.AutoIconify;
+        
+        m_refreshRate = windowInit.RefreshRate;
+        m_samples = windowInit.Samples;
+        
+        m_fullscreen = fullscreen;
+    }
+
+    void GLFW::createGLFWWindow()
     {
         auto errorCallback = [](int code, const char* description)
         {
@@ -61,38 +89,36 @@ namespace Window
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif
 
-        glfwWindowHint(GLFW_SAMPLES, windowSettings.Samples);
+        glfwWindowHint(GLFW_SAMPLES, m_samples);
 
         GLFWmonitor* selectedMonitor = nullptr;
 
         if (m_fullscreen)
             selectedMonitor = glfwGetPrimaryMonitor();
 
-        glfwWindowHint(GLFW_RESIZABLE,    windowSettings.Resizable);
-        glfwWindowHint(GLFW_DECORATED,    windowSettings.Decorated);
-        glfwWindowHint(GLFW_FOCUSED,      windowSettings.Focused);
-        glfwWindowHint(GLFW_MAXIMIZED,    windowSettings.Maximized);
-        glfwWindowHint(GLFW_FLOATING,     windowSettings.Floating);
-        glfwWindowHint(GLFW_VISIBLE,      windowSettings.Visible);
-        glfwWindowHint(GLFW_AUTO_ICONIFY, windowSettings.AutoIconify);
-        glfwWindowHint(GLFW_REFRESH_RATE, windowSettings.RefreshRate);
-        glfwWindowHint(GLFW_SAMPLES,      windowSettings.Samples);
+        glfwWindowHint(GLFW_RESIZABLE,    m_resizable);
+        glfwWindowHint(GLFW_DECORATED,    m_decorated);
+        glfwWindowHint(GLFW_FOCUSED,      m_focused);
+        glfwWindowHint(GLFW_MAXIMIZED,    m_maximized);
+        glfwWindowHint(GLFW_FLOATING,     m_floating);
+        glfwWindowHint(GLFW_VISIBLE,      m_visible);
+        glfwWindowHint(GLFW_AUTO_ICONIFY, m_autoIconify);
+        glfwWindowHint(GLFW_REFRESH_RATE, m_refreshRate);
+        glfwWindowHint(GLFW_SAMPLES,      m_samples);
 
-        m_window = glfwCreateWindow(m_settings.Width, m_settings.Height, m_settings.Title.c_str(), selectedMonitor, nullptr);
+        m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), selectedMonitor, nullptr);
 
         if (!m_window)
             throw std::runtime_error("Failed to create GLFW window");
 
-        if (m_settings.Y == Settings::WindowSettings::DONT_CARE &&
-            m_settings.Y == Settings::WindowSettings::DONT_CARE)
-            glfwGetWindowPos(m_window, &m_settings.X, &m_settings.Y);
+        if (m_posX == DONT_CARE && m_posY == DONT_CARE)
+            glfwGetWindowPos(m_window, &m_posX, &m_posY);
         else
-            glfwSetWindowPos(m_window, m_settings.X, m_settings.Y);
+            glfwSetWindowPos(m_window, m_posX, m_posY);
 
-        glfwSetWindowSizeLimits(m_window, m_settings.MinWidth, m_settings.MinHeight,
-                m_settings.MaxWidth, m_settings.MaxHeight);
+        glfwSetWindowSizeLimits(m_window, m_minWidth, m_minHeight, m_maxWidth, m_maxHeight);
 
-        if (m_settings.Fullscreen)
+        if (m_fullscreen)
             SetFullscreen(true);
 
         glfwSetWindowUserPointer(m_window, this);
@@ -106,15 +132,21 @@ namespace Window
     {
         auto keyCallback = [](GLFWwindow* window, int key, int scancode, int action, int mods)
         {
-            GLFW* current = reinterpret_cast<GLFW*>(glfwGetWindowUserPointer(window));
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
             if (current)
             {
                 if (action == GLFW_PRESS)
-                    current->m_inputManager->KeyPressedEvent.Invoke(static_cast<Inputs::EKey>(key));
+                {
+                    Eventing::KeyPressedEvent pressedEvent(static_cast<Inputs::EKey>(key));
+                    current->Events.Invoke(pressedEvent);
+                }
 
                 if (action == GLFW_RELEASE)
-                    current->m_inputManager->KeyReleasedEvent.Invoke(static_cast<Inputs::EKey>(key));
+                {
+                    Eventing::KeyReleasedEvent releasedEvent(static_cast<Inputs::EKey>(key));
+                    current->Events.Invoke(releasedEvent);
+                }
             }
         };
 
@@ -125,15 +157,21 @@ namespace Window
     {
         auto mouseCallback = [](GLFWwindow* window, int button, int action, int mods)
         {
-            GLFW* current = reinterpret_cast<GLFW*>(glfwGetWindowUserPointer(window));
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
             if (current)
             {
                 if (action == GLFW_PRESS)
-                    current->m_inputManager->MouseButtonPressedEvent.Invoke(static_cast<Inputs::EMouseButton>(button));
-
+                {
+                    Eventing::MousePressedEvent pressedEvent(static_cast<Inputs::EMouseButton>(button));
+                    current->Events.Invoke(pressedEvent);
+                }
+                
                 if (action == GLFW_RELEASE)
-                    current->m_inputManager->MouseButtonReleasedEvent.Invoke(static_cast<Inputs::EMouseButton>(button));
+                {
+                    Eventing::MouseReleasedEvent releasedEvent(static_cast<Inputs::EMouseButton>(button));
+                    current->Events.Invoke(releasedEvent);
+                }
             }
         };
 
@@ -144,23 +182,46 @@ namespace Window
     {
         auto cursorMoveCallback = [](GLFWwindow* window, double x, double y)
         {
-            GLFW* current = reinterpret_cast<GLFW*>(glfwGetWindowUserPointer(window));
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
             if (current)
-                current->m_inputManager->CursorMoveEvent.Invoke(x, y);
+            {
+                Eventing::MouseMovedEvent movedEvent(x, y);
+                current->Events.Invoke(movedEvent);
+            }
         };
 
         glfwSetCursorPosCallback(m_window, cursorMoveCallback);
+    }
+
+    void GLFW::bindScrollCallback() const
+    {
+        auto scrollCallback = [](GLFWwindow* window, double offsetX, double offsetY)
+        {
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
+            
+            if (current)
+            {
+                Eventing::MouseScrolledEvent scrolledEvent(offsetX, offsetY);
+                current->Events.Invoke(scrolledEvent);
+            }
+        };
+
+        glfwSetScrollCallback(m_window, scrollCallback);
     }
 
     void GLFW::bindResizeCallback() const
     {
         auto resizeCallback = [](GLFWwindow* window, int width, int height)
         {
-            GLFW* current = reinterpret_cast<GLFW*>(glfwGetWindowUserPointer(window));
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
             if (current)
-                current->ResizeEvent.Invoke(width, height);
+            {
+                current->onResize(width, height);
+                Eventing::WindowResizeEvent resizeEvent(width, height);
+                current->Events.Invoke(resizeEvent);
+            }
         };
 
         glfwSetWindowSizeCallback(m_window, resizeCallback);
@@ -170,10 +231,13 @@ namespace Window
     {
         auto framebufferResizeCallback = [](GLFWwindow* window, int width, int height)
         {
-            GLFW* current = reinterpret_cast<GLFW*>(glfwGetWindowUserPointer(window));
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
             if (current)
-                current->FramebufferResizeEvent.Invoke(width, height);
+            {
+                Eventing::FramebufferResizeEvent resizeEvent(width, height);
+                current->Events.Invoke(resizeEvent);
+            }
         };
 
         glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
@@ -183,10 +247,14 @@ namespace Window
     {
         auto moveCallback = [](GLFWwindow* window, int x, int y)
         {
-            GLFW* current = reinterpret_cast<GLFW*>(glfwGetWindowUserPointer(window));
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
             if (current)
-                current->MoveEvent.Invoke(x, y);
+            {
+                current->onMove(x, y);
+                Eventing::WindowMoveEvent moveEvent(x, y);
+                current->Events.Invoke(moveEvent);
+            }
         };
 
         glfwSetWindowPosCallback(m_window, moveCallback);
@@ -196,15 +264,21 @@ namespace Window
     {
         auto iconifyCallback = [](GLFWwindow* window, int iconified)
         {
-            GLFW* current = reinterpret_cast<GLFW*>(glfwGetWindowUserPointer(window));
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
             if (current)
             {
                 if (iconified == GLFW_TRUE)
-                    current->MinimizeEvent.Invoke();
+                {
+                    Eventing::WindowMinimizeEvent minEvent;
+                    current->Events.Invoke(minEvent);
+                }
 
                 if (iconified == GLFW_FALSE)
-                    current->MaximizeEvent.Invoke();
+                {
+                    Eventing::WindowMaximizeEvent maxEvent;
+                    current->Events.Invoke(maxEvent);
+                }
             }
         };
 
@@ -215,15 +289,21 @@ namespace Window
     {
         auto focusCallback = [](GLFWwindow* window, int focused)
         {
-            GLFW* current = reinterpret_cast<GLFW*>(glfwGetWindowUserPointer(window));
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
             if (current)
             {
                 if (focused == GLFW_TRUE)
-                    current->GainFocusEvent.Invoke();
+                {
+                    Eventing::WindowGainFocusEvent gainEvent;
+                    current->Events.Invoke(gainEvent);
+                }
 
                 if (focused == GLFW_FALSE)
-                    current->LostFocusEvent.Invoke();
+                {
+                    Eventing::WindowLostFocusEvent lostEvent;
+                    current->Events.Invoke(lostEvent);
+                }
             }
         };
 
@@ -234,10 +314,13 @@ namespace Window
     {
         auto closeCallback = [](GLFWwindow* window)
         {
-            GLFW* current = reinterpret_cast<GLFW*>(glfwGetWindowUserPointer(window));
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
             if (current)
-                current->CloseEvent.Invoke();
+            {
+                Eventing::WindowCloseEvent closeEvent;
+                current->Events.Invoke(closeEvent);
+            }
         };
 
         glfwSetWindowCloseCallback(m_window, closeCallback);
@@ -245,28 +328,19 @@ namespace Window
 
     void GLFW::onResize(int32_t width, int32_t height)
     {
-        m_settings.Width = width;
-        m_settings.Height = height;
+        m_width = width;
+        m_height = height;
     }
 
     void GLFW::onMove(int32_t x, int32_t y)
     {
-        m_settings.X = x;
-        m_settings.Y = y;
+        m_posX = x;
+        m_posY = y;
     }
 
     void GLFW::CloseWindow()
     {
-        ResizeEvent.RemoveAllListeners();
-        MoveEvent.RemoveAllListeners();
-        FramebufferResizeEvent.RemoveAllListeners();
-
-        MinimizeEvent.RemoveAllListeners();
-        MaximizeEvent.RemoveAllListeners();
-        RestoreEvent.RemoveAllListeners();
-        LostFocusEvent.RemoveAllListeners();
-        GainFocusEvent.RemoveAllListeners();
-        CloseEvent.RemoveAllListeners();
+        Events.RemoveAllListeners();
 
         if (m_window)
         {
@@ -305,20 +379,22 @@ namespace Window
 
     void GLFW::SetMinimumSize(int32_t width, int32_t height)
     {
-        m_settings.MinWidth = width;
-        m_settings.MinHeight = height;
+        m_minWidth = width;
+        m_minHeight = height;
+
         glfwSetWindowSizeLimits(m_window,
-            m_settings.MinWidth, m_settings.MinHeight,
-            m_settings.MaxWidth, m_settings.MaxHeight);
+            m_minWidth, m_minHeight,
+            m_maxWidth, m_maxHeight);
     }
 
     void GLFW::SetMaximumSize(int32_t width, int32_t height)
     {
-        m_settings.MaxWidth = width;
-        m_settings.MaxHeight = height;
+        m_maxWidth = width;
+        m_maxHeight = height;
+
         glfwSetWindowSizeLimits(m_window,
-            m_settings.MinWidth, m_settings.MinHeight,
-            m_settings.MaxWidth, m_settings.MaxHeight);
+            m_minWidth, m_minHeight,
+            m_maxWidth, m_maxHeight);
     }
 
     void GLFW::SetFullscreen(bool value)
@@ -333,11 +409,11 @@ namespace Window
             (
                 m_window,
                 value ? glfwGetPrimaryMonitor() : nullptr,
-                m_settings.X,
-                m_settings.Y,
+                m_posX,
+                m_posY,
                 mode->width,
                 mode->height,
-                m_settings.RefreshRate
+                m_refreshRate
             );
         }
         else
@@ -348,18 +424,18 @@ namespace Window
             (
                 m_window,
                 value ? glfwGetPrimaryMonitor() : nullptr,
-                m_settings.X,
-                m_settings.Y,
-                m_settings.Width,
-                m_settings.Height,
-                m_settings.RefreshRate
+                m_posX,
+                m_posY,
+                m_width,
+                m_height,
+                m_refreshRate
             );
         }
     }
 
     void GLFW::SetTitle(const std::string& title)
     {
-        m_settings.Title = title;
+        m_title = title;
         glfwSetWindowTitle(m_window, title.c_str());
     }
 
@@ -468,7 +544,7 @@ namespace Window
 
     std::string GLFW::GetTitle() const
     {
-        return m_settings.Title;
+        return m_title;
     }
 
     std::tuple<int32_t, int32_t> GLFW::GetSize() const
@@ -481,12 +557,12 @@ namespace Window
 
     std::tuple<int32_t, int32_t> GLFW::GetMinimumSize() const
     {
-        return { m_settings.MinWidth, m_settings.MinHeight };
+        return { m_minWidth, m_minHeight };
     }
 
     std::tuple<int32_t, int32_t> GLFW::GetMaximumSize() const
     {
-        return { m_settings.MaxWidth, m_settings.MaxHeight };
+        return { m_maxWidth, m_maxHeight };
     }
 
     std::tuple<int32_t, int32_t> GLFW::GetPosition() const

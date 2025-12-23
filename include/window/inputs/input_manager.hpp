@@ -2,19 +2,18 @@
 #ifndef WINDOW_INPUTS_INPUT_MANAGER_HPP_
 #define WINDOW_INPUTS_INPUT_MANAGER_HPP_
 
-#include <unordered_map>
-
-#include <GLFW/glfw3.h>
-
 #include "window/cursor/cursor_mode.hpp"
 #include "window/cursor/cursor_shape.hpp"
 #include "window/inputs/key.hpp"
 #include "window/inputs/key_state.hpp"
 #include "window/inputs/mouse_button.hpp"
 #include "window/inputs/mouse_button_state.hpp"
-#include "window/utils/event.hpp"
 
-namespace Window{ class GLFW; }
+#include <GLFW/glfw3.h>
+
+#include <unordered_map>
+
+namespace Window { class GLFW; }
 
 namespace Window::Inputs
 {
@@ -42,14 +41,6 @@ namespace Window::Inputs
 
         void SetCursorMode(Cursor::ECursorMode mode);
         void SetCursorShape(Cursor::ECursorShape cursor);
-
-        void ClearEvents();
-
-        Utils::Event<EKey> KeyPressedEvent;
-        Utils::Event<EKey> KeyReleasedEvent;
-        Utils::Event<EMouseButton> MouseButtonPressedEvent;
-        Utils::Event<EMouseButton> MouseButtonReleasedEvent;
-        Utils::Event<double, double> CursorMoveEvent;
 
     private:
         Window::GLFW* m_window = nullptr;

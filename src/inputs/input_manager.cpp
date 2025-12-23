@@ -3,7 +3,7 @@
 
 namespace Window::Inputs
 {
-    InputManager::InputManager(Window::GLFW* window) : m_window{ window }
+    InputManager::InputManager(Window::GLFW* window) : m_window { window }
     {
         m_cursors[Cursor::ECursorShape::Arrow]     = glfwCreateStandardCursor(static_cast<int>(Cursor::ECursorShape::Arrow));
         m_cursors[Cursor::ECursorShape::IBeam]     = glfwCreateStandardCursor(static_cast<int>(Cursor::ECursorShape::IBeam));
@@ -15,8 +15,6 @@ namespace Window::Inputs
 
     InputManager::~InputManager()
     {
-        ClearEvents();
-
         glfwDestroyCursor(m_cursors[Cursor::ECursorShape::Arrow]);
         glfwDestroyCursor(m_cursors[Cursor::ECursorShape::IBeam]);
         glfwDestroyCursor(m_cursors[Cursor::ECursorShape::CrossHair]);
@@ -82,14 +80,5 @@ namespace Window::Inputs
     void InputManager::SetCursorShape(Cursor::ECursorShape cursorShape)
     {
         glfwSetCursor(m_window->GetWindow(), m_cursors[cursorShape]);
-    }
-
-    void InputManager::ClearEvents()
-    {
-        KeyPressedEvent.RemoveAllListeners();
-        KeyReleasedEvent.RemoveAllListeners();
-        MouseButtonPressedEvent.RemoveAllListeners();
-        MouseButtonReleasedEvent.RemoveAllListeners();
-        CursorMoveEvent.RemoveAllListeners();
     }
 }
