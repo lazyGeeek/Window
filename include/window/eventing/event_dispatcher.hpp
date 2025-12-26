@@ -17,39 +17,40 @@ namespace Window::Eventing
     public:
         using Callback = std::function<void(IEvent&)>;
 
-        ListenerID operator+=(Callback&& callback)
+        virtual ListenerID operator+=(Callback callback)
         {
             return AddListener(std::move(callback));
         }
 
-        bool operator-=(ListenerID listenerID)
+        virtual bool operator-=(ListenerID listenerID)
         {
             return RemoveListener(listenerID);
         }
 
-        ListenerID AddListener(Callback&& callback)
+        virtual ListenerID AddListener(Callback callback)
         {
             ListenerID listenerID = m_availableListenerID++;
             m_callbacks.emplace(listenerID, callback);
             return listenerID;
         }
 
-        bool RemoveListener(ListenerID listenerID)
+        virtual bool RemoveListener(ListenerID listenerID)
         {
             return m_callbacks.erase(listenerID) != 0;
         }
 
-        void RemoveAllListeners()
+    protected:
+        virtual void removeAllListeners()
         {
             m_callbacks.clear();
         }
 
-        uint64_t GetListenerCount()
+        virtual uint64_t getListenerCount()
         {
             return m_callbacks.size();
         }
 
-        void Invoke(IEvent& event)
+        virtual void invoke(IEvent& event)
         {
             for (auto const& [key, value] : m_callbacks)
                 value(event);

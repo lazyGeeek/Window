@@ -1,69 +1,47 @@
 #include "window/glfw.hpp"
-#include "window/inputs/input_manager.hpp"
-
+#include "window/eventing/event_manager.hpp"
 #include "window/eventing/window_events.hpp"
-#include "window/eventing/input_events.hpp"
 
 #include <stdexcept>
 
-#include <iostream>
-
 namespace Window
 {
-    GLFW::GLFW(const WindowInit& windowInit, bool fullscreen)
+    GLFW::GLFW(WindowInit windowInit)
     {
-        parseInit(windowInit, fullscreen);
+        parseInit(windowInit);
         createGLFWWindow();
 
-        bindKeyCallback();
-        bindMouseCallback();
-        bindCursorMoveCallback();
-        bindScrollCallback();
-        bindIconifyCallback();
-        bindCloseCallback();
-        bindResizeCallback();
-        bindFramebufferResizeCallback();
-        bindMoveCallback();
-        bindFocusCallback();
-
-        m_inputManager = std::make_unique<Inputs::InputManager>(this);
+        m_eventManager = std::make_unique<Eventing::EventManager>(m_window);
+        m_eventManager->AddListener([&, this](Window::Eventing::IEvent& event)
+        {
+            if (event.GetEventType() == Window::Eventing::EEventType::WindowMove)
+            {
+                const auto& move = dynamic_cast<Eventing::WindowMoveEvent&>(event);
+                onMove(move.GetPosX(), move.GetPosY());
+            }
+            else if (event.GetEventType() == Window::Eventing::EEventType::WindowResize)
+            {
+                const auto& resize = dynamic_cast<Eventing::WindowResizeEvent&>(event);
+                onResize(resize.GetWidth(), resize.GetHeight());
+            }
+            else if (event.GetEventType() == Window::Eventing::EEventType::WindowClose)
+            {
+                CloseWindow();
+            }
+        });
     }
 
     GLFW::~GLFW()
     {
-        if (m_inputManager)
-            m_inputManager = nullptr;
-
         CloseWindow();
         glfwTerminate();
     }
 
-    void GLFW::parseInit(const WindowInit& windowInit, bool fullscreen)
+    void GLFW::parseInit(const WindowInit& windowInit)
     {
-        m_title = windowInit.Title;
-        
-        m_width     = windowInit.Width;
-        m_height    = windowInit.Height;
-        m_minWidth  = windowInit.MinWidth;
-        m_minHeight = windowInit.MinHeight;
-        m_maxWidth  = windowInit.MaxWidth;
-        m_maxHeight = windowInit.MaxHeight;
-        m_posX      = windowInit.PosX;
-        m_posY      = windowInit.PosY;
-        
-        m_fullscreen  = windowInit.Fullscreen;
-        m_decorated   = windowInit.Decorated;
-        m_resizable   = windowInit.Resizable;
-        m_focused     = windowInit.Focused;
-        m_maximized   = windowInit.Maximized;
-        m_floating    = windowInit.Floating;
-        m_visible     = windowInit.Visible;
-        m_autoIconify = windowInit.AutoIconify;
-        
-        m_refreshRate = windowInit.RefreshRate;
-        m_samples = windowInit.Samples;
-        
-        m_fullscreen = fullscreen;
+        m_title  = windowInit.Title;
+        m_width  = windowInit.Width;
+        m_height = windowInit.Height;
     }
 
     void GLFW::createGLFWWindow()
@@ -89,13 +67,7 @@ namespace Window
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif
 
-        glfwWindowHint(GLFW_SAMPLES, m_samples);
-
-        GLFWmonitor* selectedMonitor = nullptr;
-
-        if (m_fullscreen)
-            selectedMonitor = glfwGetPrimaryMonitor();
-
+        glfwWindowHint(GLFW_SAMPLES,      m_samples);
         glfwWindowHint(GLFW_RESIZABLE,    m_resizable);
         glfwWindowHint(GLFW_DECORATED,    m_decorated);
         glfwWindowHint(GLFW_FOCUSED,      m_focused);
@@ -106,10 +78,10 @@ namespace Window
         glfwWindowHint(GLFW_REFRESH_RATE, m_refreshRate);
         glfwWindowHint(GLFW_SAMPLES,      m_samples);
 
-        m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), selectedMonitor, nullptr);
+        m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
 
         if (!m_window)
-            throw std::runtime_error("Failed to create GLFW window");
+            throw std::runtime_error("[GLFW] Failed to create GLFW window");
 
         if (m_posX == DONT_CARE && m_posY == DONT_CARE)
             glfwGetWindowPos(m_window, &m_posX, &m_posY);
@@ -121,209 +93,9 @@ namespace Window
         if (m_fullscreen)
             SetFullscreen(true);
 
-        glfwSetWindowUserPointer(m_window, this);
-
 #ifndef WINDOW_USE_VULKAN
         glfwMakeContextCurrent(m_window);
 #endif
-    }
-
-    void GLFW::bindKeyCallback() const
-    {
-        auto keyCallback = [](GLFWwindow* window, int key, int scancode, int action, int mods)
-        {
-            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
-
-            if (current)
-            {
-                if (action == GLFW_PRESS)
-                {
-                    Eventing::KeyPressedEvent pressedEvent(static_cast<Inputs::EKey>(key));
-                    current->Events.Invoke(pressedEvent);
-                }
-
-                if (action == GLFW_RELEASE)
-                {
-                    Eventing::KeyReleasedEvent releasedEvent(static_cast<Inputs::EKey>(key));
-                    current->Events.Invoke(releasedEvent);
-                }
-            }
-        };
-
-        glfwSetKeyCallback(m_window, keyCallback);
-    }
-
-    void GLFW::bindMouseCallback() const
-    {
-        auto mouseCallback = [](GLFWwindow* window, int button, int action, int mods)
-        {
-            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
-
-            if (current)
-            {
-                if (action == GLFW_PRESS)
-                {
-                    Eventing::MousePressedEvent pressedEvent(static_cast<Inputs::EMouseButton>(button));
-                    current->Events.Invoke(pressedEvent);
-                }
-                
-                if (action == GLFW_RELEASE)
-                {
-                    Eventing::MouseReleasedEvent releasedEvent(static_cast<Inputs::EMouseButton>(button));
-                    current->Events.Invoke(releasedEvent);
-                }
-            }
-        };
-
-        glfwSetMouseButtonCallback(m_window, mouseCallback);
-    }
-
-    void GLFW::bindCursorMoveCallback() const
-    {
-        auto cursorMoveCallback = [](GLFWwindow* window, double x, double y)
-        {
-            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
-
-            if (current)
-            {
-                Eventing::MouseMovedEvent movedEvent(x, y);
-                current->Events.Invoke(movedEvent);
-            }
-        };
-
-        glfwSetCursorPosCallback(m_window, cursorMoveCallback);
-    }
-
-    void GLFW::bindScrollCallback() const
-    {
-        auto scrollCallback = [](GLFWwindow* window, double offsetX, double offsetY)
-        {
-            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
-            
-            if (current)
-            {
-                Eventing::MouseScrolledEvent scrolledEvent(offsetX, offsetY);
-                current->Events.Invoke(scrolledEvent);
-            }
-        };
-
-        glfwSetScrollCallback(m_window, scrollCallback);
-    }
-
-    void GLFW::bindResizeCallback() const
-    {
-        auto resizeCallback = [](GLFWwindow* window, int width, int height)
-        {
-            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
-
-            if (current)
-            {
-                current->onResize(width, height);
-                Eventing::WindowResizeEvent resizeEvent(width, height);
-                current->Events.Invoke(resizeEvent);
-            }
-        };
-
-        glfwSetWindowSizeCallback(m_window, resizeCallback);
-    }
-
-    void GLFW::bindFramebufferResizeCallback() const
-    {
-        auto framebufferResizeCallback = [](GLFWwindow* window, int width, int height)
-        {
-            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
-
-            if (current)
-            {
-                Eventing::FramebufferResizeEvent resizeEvent(width, height);
-                current->Events.Invoke(resizeEvent);
-            }
-        };
-
-        glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
-    }
-
-    void GLFW::bindMoveCallback() const
-    {
-        auto moveCallback = [](GLFWwindow* window, int x, int y)
-        {
-            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
-
-            if (current)
-            {
-                current->onMove(x, y);
-                Eventing::WindowMoveEvent moveEvent(x, y);
-                current->Events.Invoke(moveEvent);
-            }
-        };
-
-        glfwSetWindowPosCallback(m_window, moveCallback);
-    }
-
-    void GLFW::bindIconifyCallback() const
-    {
-        auto iconifyCallback = [](GLFWwindow* window, int iconified)
-        {
-            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
-
-            if (current)
-            {
-                if (iconified == GLFW_TRUE)
-                {
-                    Eventing::WindowMinimizeEvent minEvent;
-                    current->Events.Invoke(minEvent);
-                }
-
-                if (iconified == GLFW_FALSE)
-                {
-                    Eventing::WindowMaximizeEvent maxEvent;
-                    current->Events.Invoke(maxEvent);
-                }
-            }
-        };
-
-        glfwSetWindowIconifyCallback(m_window, iconifyCallback);
-    }
-
-    void GLFW::bindFocusCallback() const
-    {
-        auto focusCallback = [](GLFWwindow* window, int focused)
-        {
-            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
-
-            if (current)
-            {
-                if (focused == GLFW_TRUE)
-                {
-                    Eventing::WindowGainFocusEvent gainEvent;
-                    current->Events.Invoke(gainEvent);
-                }
-
-                if (focused == GLFW_FALSE)
-                {
-                    Eventing::WindowLostFocusEvent lostEvent;
-                    current->Events.Invoke(lostEvent);
-                }
-            }
-        };
-
-        glfwSetWindowFocusCallback(m_window, focusCallback);
-    }
-
-    void GLFW::bindCloseCallback() const
-    {
-        auto closeCallback = [](GLFWwindow* window)
-        {
-            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
-
-            if (current)
-            {
-                Eventing::WindowCloseEvent closeEvent;
-                current->Events.Invoke(closeEvent);
-            }
-        };
-
-        glfwSetWindowCloseCallback(m_window, closeCallback);
     }
 
     void GLFW::onResize(int32_t width, int32_t height)
@@ -340,7 +112,8 @@ namespace Window
 
     void GLFW::CloseWindow()
     {
-        Events.RemoveAllListeners();
+        if (m_eventManager)
+            m_eventManager = nullptr;
 
         if (m_window)
         {
@@ -357,14 +130,6 @@ namespace Window
     void GLFW::ClearCurrentContext() const
     {
         glfwMakeContextCurrent(nullptr);
-    }
-
-    Inputs::InputManager& GLFW::getInputManager() const
-    {
-        if (!m_inputManager)
-            throw std::runtime_error("Input Manager Destroyed");
-
-        return *m_inputManager.get();
     }
 
     void GLFW::SetSize(int32_t width, int32_t height)
@@ -399,38 +164,20 @@ namespace Window
 
     void GLFW::SetFullscreen(bool value)
     {
-        if (value)
-        {
-            m_fullscreen = true;
+        m_fullscreen = value;
 
-            const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+        const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
-            glfwSetWindowMonitor
-            (
-                m_window,
-                value ? glfwGetPrimaryMonitor() : nullptr,
-                m_posX,
-                m_posY,
-                mode->width,
-                mode->height,
-                m_refreshRate
-            );
-        }
-        else
-        {
-            m_fullscreen = true;
-
-            glfwSetWindowMonitor
-            (
-                m_window,
-                value ? glfwGetPrimaryMonitor() : nullptr,
-                m_posX,
-                m_posY,
-                m_width,
-                m_height,
-                m_refreshRate
-            );
-        }
+        glfwSetWindowMonitor
+        (
+            m_window,
+            m_fullscreen ? glfwGetPrimaryMonitor() : nullptr,
+            m_posX,
+            m_posY,
+            m_fullscreen ? mode->width : m_width,
+            m_fullscreen ? mode->height : m_height,
+            m_refreshRate
+        );
     }
 
     void GLFW::SetTitle(const std::string& title)

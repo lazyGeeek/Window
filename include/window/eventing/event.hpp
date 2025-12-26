@@ -20,13 +20,13 @@ namespace Window::Eventing
         WindowGainFocus,
         FramebufferResize,
         
-        KeyPressed,
-        KeyReleased,
+        KeyPress,
+        KeyRelease,
         
-        MouseButtonPressed,
-        MouseButtonReleased,
-        MouseMoved,
-        MouseScrolled,
+        MouseButtonPress,
+        MouseButtonRelease,
+        MouseMove,
+        MouseScroll,
     };
 
     class IEvent

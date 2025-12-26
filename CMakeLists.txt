@@ -15,13 +15,15 @@ file(
     "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/libs/*.*"
 )
 
-foreach (BIN_FILE ${WINDOW_BINS_LIST})
-    file(COPY ${BIN_FILE} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-endforeach ()
+foreach (BIN_FILE ${UI_BINS_LIST})
+    get_filename_component(BIN_NAME "${BIN_FILE}" NAME)
+    file(COPY_FILE ${BIN_FILE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${BIN_NAME} ONLY_IF_DIFFERENT)
+endforeach()
 
-foreach (LIB_FILE ${WINDOW_LIBS_LIST})
-    file(COPY ${LIB_FILE} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-endforeach ()
+foreach (LIB_FILE ${UI_LIBS_LIST})
+    get_filename_component(LIB_NAME "${LIB_FILE}" NAME)
+    file(COPY_FILE ${LIB_FILE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${LIB_NAME} ONLY_IF_DIFFERENT)
+endforeach()
 
 file(
     GLOB_RECURSE WINDOW_CODE_LIST
