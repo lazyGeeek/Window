@@ -10,11 +10,12 @@
 #endif
 #include <GLFW/glfw3.h>
 
+#include "window/eventing/event_dispatcher.hpp"
 #include "window/utils/non_copyable.hpp"
 
 namespace Window
 {
-    namespace Eventing { class EventManager; }
+    class Monitor;
 
     struct WindowInit
     {
@@ -24,7 +25,7 @@ namespace Window
         int32_t Height = 720;
     };
 
-    class GLFW : public Utils::NonCopyable
+    class GLFW : public Utils::NonCopyable, public Eventing::Dispatcher
     {
     public:
         GLFW(WindowInit windowInit = { });
@@ -86,12 +87,13 @@ namespace Window
     private:
         void parseInit(const WindowInit& windowInit);
         void createGLFWWindow();
+        void bindEventCallbacks();
 
         void onResize(int32_t width, int32_t height);
         void onMove(int32_t x, int32_t y);
 
         GLFWwindow* m_window = nullptr;
-        std::unique_ptr<Eventing::EventManager> m_eventManager = nullptr;
+        std::unique_ptr<Monitor> m_monitor = nullptr;
 
         std::string m_title = "";
 

@@ -1,6 +1,8 @@
 #include "window/glfw.hpp"
-#include "window/eventing/event_manager.hpp"
+#include "window/eventing/input_events.hpp"
 #include "window/eventing/window_events.hpp"
+
+#include "window/monitor.hpp"
 
 #include <stdexcept>
 
@@ -10,9 +12,9 @@ namespace Window
     {
         parseInit(windowInit);
         createGLFWWindow();
+        bindEventCallbacks();
 
-        m_eventManager = std::make_unique<Eventing::EventManager>(m_window);
-        m_eventManager->AddListener([&, this](Window::Eventing::IEvent& event)
+        AddListener([&, this](Window::Eventing::IEvent& event)
         {
             if (event.GetEventType() == Window::Eventing::EEventType::WindowMove)
             {
@@ -24,16 +26,17 @@ namespace Window
                 const auto& resize = dynamic_cast<Eventing::WindowResizeEvent&>(event);
                 onResize(resize.GetWidth(), resize.GetHeight());
             }
-            else if (event.GetEventType() == Window::Eventing::EEventType::WindowClose)
-            {
-                CloseWindow();
-            }
         });
     }
 
     GLFW::~GLFW()
     {
-        CloseWindow();
+        removeAllListeners();
+        if (m_window)
+        {
+            glfwDestroyWindow(m_window);
+            m_window = nullptr;
+        }
         glfwTerminate();
     }
 
@@ -96,29 +99,209 @@ namespace Window
 #ifndef WINDOW_USE_VULKAN
         glfwMakeContextCurrent(m_window);
 #endif
+
+        glfwSetWindowUserPointer(m_window, this);
+
+        m_monitor = std::make_unique<Monitor>(m_posX, m_posY);
+    }
+
+    void GLFW::bindEventCallbacks()
+    {
+        auto keyCallback = [](GLFWwindow* window, int key, int scancode, int action, int mods)
+        {
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
+
+            if (current)
+            {
+                if (action == GLFW_PRESS)
+                {
+                    Eventing::KeyPressEvent pressEvent(static_cast<Inputs::EKey>(key));
+                    current->invoke(pressEvent);
+                }
+
+                if (action == GLFW_RELEASE)
+                {
+                    Eventing::KeyReleaseEvent releaseEvent(static_cast<Inputs::EKey>(key));
+                    current->invoke(releaseEvent);
+                }
+            }
+        };
+
+        glfwSetKeyCallback(m_window, keyCallback);
+
+        auto mouseCallback = [](GLFWwindow* window, int button, int action, int mods)
+        {
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
+
+            if (current)
+            {
+                if (action == GLFW_PRESS)
+                {
+                    Eventing::MousePressEvent pressEvent(static_cast<Inputs::EMouseButton>(button));
+                    current->invoke(pressEvent);
+                }
+                
+                if (action == GLFW_RELEASE)
+                {
+                    Eventing::MouseReleaseEvent releaseEvent(static_cast<Inputs::EMouseButton>(button));
+                    current->invoke(releaseEvent);
+                }
+            }
+        };
+
+        glfwSetMouseButtonCallback(m_window, mouseCallback);
+
+        auto cursorMoveCallback = [](GLFWwindow* window, double x, double y)
+        {
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
+
+            if (current)
+            {
+                Eventing::MouseMoveEvent moveEvent(x, y);
+                current->invoke(moveEvent);
+            }
+        };
+
+        glfwSetCursorPosCallback(m_window, cursorMoveCallback);
+
+        auto scrollCallback = [](GLFWwindow* window, double offsetX, double offsetY)
+        {
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
+            
+            if (current)
+            {
+                Eventing::MouseScrollEvent scrollEvent(offsetX, offsetY);
+                current->invoke(scrollEvent);
+            }
+        };
+
+        glfwSetScrollCallback(m_window, scrollCallback);
+
+        auto resizeCallback = [](GLFWwindow* window, int width, int height)
+        {
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
+
+            if (current)
+            {
+                Eventing::WindowResizeEvent resizeEvent(width, height);
+                current->invoke(resizeEvent);
+            }
+        };
+
+        glfwSetWindowSizeCallback(m_window, resizeCallback);
+
+        auto framebufferResizeCallback = [](GLFWwindow* window, int width, int height)
+        {
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
+
+            if (current)
+            {
+                Eventing::FramebufferResizeEvent resizeEvent(width, height);
+                current->invoke(resizeEvent);
+            }
+        };
+
+        glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
+
+        auto moveCallback = [](GLFWwindow* window, int x, int y)
+        {
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
+
+            if (current)
+            {
+                Eventing::WindowMoveEvent moveEvent(x, y);
+                current->invoke(moveEvent);
+            }
+        };
+
+        glfwSetWindowPosCallback(m_window, moveCallback);
+
+        auto iconifyCallback = [](GLFWwindow* window, int iconified)
+        {
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
+
+            if (current)
+            {
+                if (iconified == GLFW_TRUE)
+                {
+                    Eventing::WindowMinimizeEvent minEvent;
+                    current->invoke(minEvent);
+                }
+
+                if (iconified == GLFW_FALSE)
+                {
+                    Eventing::WindowMaximizeEvent maxEvent;
+                    current->invoke(maxEvent);
+                }
+            }
+        };
+
+        glfwSetWindowIconifyCallback(m_window, iconifyCallback);
+
+        auto focusCallback = [](GLFWwindow* window, int focused)
+        {
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
+
+            if (current)
+            {
+                if (focused == GLFW_TRUE)
+                {
+                    Eventing::WindowGainFocusEvent gainEvent;
+                    current->invoke(gainEvent);
+                }
+
+                if (focused == GLFW_FALSE)
+                {
+                    Eventing::WindowLostFocusEvent lostEvent;
+                    current->invoke(lostEvent);
+                }
+            }
+        };
+
+        glfwSetWindowFocusCallback(m_window, focusCallback);
+
+        auto closeCallback = [](GLFWwindow* window)
+        {
+            GLFW* current = static_cast<GLFW*>(glfwGetWindowUserPointer(window));
+
+            if (current)
+            {
+                Eventing::WindowCloseEvent closeEvent;
+                current->invoke(closeEvent);
+            }
+        };
+
+        glfwSetWindowCloseCallback(m_window, closeCallback);
     }
 
     void GLFW::onResize(int32_t width, int32_t height)
     {
+        if (m_fullscreen)
+            return;
+
         m_width = width;
         m_height = height;
     }
 
     void GLFW::onMove(int32_t x, int32_t y)
     {
+        if (m_fullscreen)
+            return;
+
         m_posX = x;
         m_posY = y;
+        
+        if (m_monitor)
+            m_monitor->UpdateMonitor(m_posX, m_posY);
     }
 
     void GLFW::CloseWindow()
     {
-        if (m_eventManager)
-            m_eventManager = nullptr;
-
-        if (m_window)
+        // if (m_window)
         {
-            glfwDestroyWindow(m_window);
-            m_window = nullptr;
+            glfwSetWindowShouldClose(m_window, true);
+            // glfwDestroyWindow(m_window);
+            // m_window = nullptr;
         }
     }
 
@@ -166,18 +349,20 @@ namespace Window
     {
         m_fullscreen = value;
 
-        const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+        if (m_fullscreen && m_monitor)
+        {
+            VideoMode mode = m_monitor->GetVideoMode();
+            const auto [posX, posY] = m_monitor->GetPosition();
+            glfwSetWindowMonitor(m_window, m_monitor->GetMonitor(),
+                                 posX, posY, mode.Width, mode.Height,
+                                 m_refreshRate);
+        }
+        else
+            glfwSetWindowMonitor(m_window, nullptr,
+                                 m_posX, m_posY,
+                                 m_width, m_height,
+                                 m_refreshRate);
 
-        glfwSetWindowMonitor
-        (
-            m_window,
-            m_fullscreen ? glfwGetPrimaryMonitor() : nullptr,
-            m_posX,
-            m_posY,
-            m_fullscreen ? mode->width : m_width,
-            m_fullscreen ? mode->height : m_height,
-            m_refreshRate
-        );
     }
 
     void GLFW::SetTitle(const std::string& title)
