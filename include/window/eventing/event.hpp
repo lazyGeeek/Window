@@ -33,7 +33,7 @@ namespace Window::Eventing
     {
     public:
         virtual ~IEvent() { };
-        
+
         virtual EEventType GetEventType() const = 0;
         virtual std::string ToString()    const = 0;
     };

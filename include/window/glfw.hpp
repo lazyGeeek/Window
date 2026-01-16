@@ -13,6 +13,8 @@
 #include "window/eventing/event_dispatcher.hpp"
 #include "window/utils/non_copyable.hpp"
 
+int Add(int a, int b) { return a + b; }
+
 namespace Window
 {
     class Monitor;

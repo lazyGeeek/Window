@@ -40,13 +40,13 @@ namespace Window::Cursor
         m_cursors.clear();
     }
 
-    void Cursor::SetCursorPosition(double x, double y)
+    void Cursor::SetPosition(double x, double y)
     {
         if (m_window)
             glfwSetCursorPos(m_window, x, y);
     }
 
-    std::tuple<double, double> Cursor::GetCursorPosition() const
+    std::tuple<double, double> Cursor::GetPosition() const
     {
         double x = 0.0;
         double y = 0.0;
@@ -57,13 +57,13 @@ namespace Window::Cursor
         return { x, y };
     }
 
-    void Cursor::SetCursorMode(ECursorMode mode)
+    void Cursor::SetMode(ECursorMode mode)
     {
         if (m_window)
             glfwSetInputMode(m_window, GLFW_CURSOR, static_cast<int>(mode));
     }
 
-    void Cursor::SetCursorShape(ECursorShape cursorShape)
+    void Cursor::SetShape(ECursorShape cursorShape)
     {
         if (m_window)
             glfwSetCursor(m_window, m_cursors[cursorShape]);

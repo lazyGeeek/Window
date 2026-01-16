@@ -59,7 +59,7 @@ namespace Window
         if (glfwInit() == GLFW_FALSE)
         {
             glfwTerminate();
-            throw std::runtime_error("Failed to Init GLFW");
+            throw std::runtime_error("[GLFW] Failed to Init GLFW");
         }
 
 #ifdef WINDOW_USE_VULKAN
@@ -297,12 +297,7 @@ namespace Window
 
     void GLFW::CloseWindow()
     {
-        // if (m_window)
-        {
-            glfwSetWindowShouldClose(m_window, true);
-            // glfwDestroyWindow(m_window);
-            // m_window = nullptr;
-        }
+        glfwSetWindowShouldClose(m_window, true);
     }
 
     void GLFW::MakeCurrentContext() const

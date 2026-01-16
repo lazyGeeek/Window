@@ -19,11 +19,11 @@ namespace Window::Cursor
         Cursor(GLFWwindow* window);
         virtual ~Cursor() override;
 
-        void SetCursorPosition(double x, double y);
-        std::tuple<double, double> GetCursorPosition() const;
+        void SetPosition(double x, double y);
+        std::tuple<double, double> GetPosition() const;
 
-        void SetCursorMode(ECursorMode mode);
-        void SetCursorShape(ECursorShape cursor);
+        void SetMode(ECursorMode mode);
+        void SetShape(ECursorShape cursor);
 
     private:
         GLFWwindow* m_window = nullptr;
