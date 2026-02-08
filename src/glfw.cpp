@@ -79,7 +79,6 @@ namespace Window
         glfwWindowHint(GLFW_VISIBLE,      m_visible);
         glfwWindowHint(GLFW_AUTO_ICONIFY, m_autoIconify);
         glfwWindowHint(GLFW_REFRESH_RATE, m_refreshRate);
-        glfwWindowHint(GLFW_SAMPLES,      m_samples);
 
         m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
 
