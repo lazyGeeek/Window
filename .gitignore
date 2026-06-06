@@ -350,7 +350,6 @@ MigrationBackup/
 .ionide/
 
 # Custom ignore rules
-.vscode
 !thirdparty/**
 thirdparty/bins/
 thirdparty/include/
@@ -358,5 +357,4 @@ thirdparty/libs/
 thirdparty/temp/
 !src/**
 build/
-build_tests/
-bin_tests/
+bin/

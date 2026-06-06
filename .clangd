@@ -1,0 +1,17 @@
+CompileFlags:
+  Add:
+    - -std=c++23
+    - -Wall
+    - -Wextra
+    - "-I./include"
+    - "-I./thirdparty/include"
+  Compiler: clang++
+
+# If:
+#   PathMatch: (^thirdparty/include/([^/]+)/(.+)\.(h|hh|hpp)$|^include/(.+)\.(h|hh|hpp|inl)$)
+
+Diagnostics:
+  ClangTidy:
+    Add: [modernize-*, performance-*, bugprone-*]
+    Remove: [modernize-use-trailing-return-type]
+    

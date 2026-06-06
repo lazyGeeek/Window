@@ -1,55 +1,50 @@
-cmake_minimum_required(VERSION 3.18)
-
-set(WINDOW_TESTS "WindowTests")
-
-project(${WINDOW_TESTS} CXX)
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin_tests/${CMAKE_SYSTEM_NAME}/${CMAKE_GENERATOR_PLATFORM})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin_tests/${CMAKE_SYSTEM_NAME}/${CMAKE_GENERATOR_PLATFORM})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin_tests/${CMAKE_SYSTEM_NAME}/${CMAKE_GENERATOR_PLATFORM})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin_tests/${CMAKE_SYSTEM_NAME}/${CMAKE_GENERATOR_PLATFORM})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin_tests/${CMAKE_SYSTEM_NAME}/${CMAKE_GENERATOR_PLATFORM})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin_tests/${CMAKE_SYSTEM_NAME}/${CMAKE_GENERATOR_PLATFORM})
-
-# GoogleTest requires at least C++17
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 include(FetchContent)
+
 FetchContent_Declare(
     googletest
-    URL https://github.com/google/googletest/archive/refs/heads/main.zip
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE  
+    URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
-
-# For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
 FetchContent_MakeAvailable(googletest)
 
-enable_testing()
+string(TOLOWER "${CMAKE_SYSTEM_NAME}" WINDOW_OS)
+string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" WINDOW_ARCH)
 
+set(WINDOW_TESTS_OUTPUT "${CMAKE_SOURCE_DIR}/bin/${WINDOW_ARCH}/${WINDOW_OS}/Tests")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${WINDOW_TESTS_OUTPUT}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${WINDOW_TESTS_OUTPUT}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${WINDOW_TESTS_OUTPUT}")
 
-file(
-    GLOB_RECURSE WINDOW_TESTS_CODE_LIST
+file(GLOB_RECURSE WINDOW_TEST_SOURCES CONFIGURE_DEPENDS
     LIST_DIRECTORIES false
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.c*"
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.h*"
-    )
-    
-add_executable(${WINDOW_TESTS} ${WINDOW_TESTS_CODE_LIST})
-    
-target_link_directories(${WINDOW_TESTS} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/bin/${CMAKE_SYSTEM_NAME}/${CMAKE_GENERATOR_PLATFORM})
-target_link_libraries(${WINDOW_TESTS} GTest::gtest_main GTest::gmock Window)
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
-target_include_directories(${WINDOW_TESTS} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/include
+add_executable(window_tests ${WINDOW_TEST_SOURCES})
+
+target_link_libraries(window_tests PRIVATE GTest::gtest_main Window)
+
+target_include_directories(window_tests PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/support"
+    "${CMAKE_SOURCE_DIR}/include"
+    "${CMAKE_SOURCE_DIR}/thirdparty/include"
 )
 
-include(GoogleTest)
-gtest_discover_tests(${WINDOW_TESTS})
+add_custom_command(TARGET window_tests POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:Window>"
+        "$<TARGET_FILE_DIR:window_tests>"
+    COMMENT "Copying Window runtime library to Tests output"
+)
 
-# Enable testing
-enable_testing()
-add_test(NAME ${WINDOW_TESTS} COMMAND ${WINDOW_TESTS})
+if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/bins")
+    add_custom_command(TARGET window_tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/thirdparty/bins"
+            "$<TARGET_FILE_DIR:window_tests>"
+        COMMENT "Copying thirdparty runtime libraries to Tests output"
+    )
+endif()
+
+include(GoogleTest)
+gtest_discover_tests(window_tests WORKING_DIRECTORY "${WINDOW_TESTS_OUTPUT}")

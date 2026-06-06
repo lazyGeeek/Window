@@ -11,12 +11,11 @@
 #include <GLFW/glfw3.h>
 
 #include "window/eventing/event_dispatcher.hpp"
+#include "window/monitor.hpp"
 #include "window/utils/non_copyable.hpp"
 
 namespace Window
 {
-    class Monitor;
-
     struct WindowInit
     {
         std::string Title = "";
