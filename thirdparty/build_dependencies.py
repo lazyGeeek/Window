@@ -46,6 +46,8 @@ def glfw_build():
         glfw_zip.extractall(temp_dir)
         
         glfw_cmake_config_args = ['-B' + glfw_build_dir,
+                                  '-G Ninja',
+                                  '-DCMAKE_C_COMPILER=clang',
                                   '-DGLFW_BUILD_EXAMPLES=OFF',
                                   '-DGLFW_BUILD_TESTS=OFF',
                                   '-DGLFW_BUILD_DOCS=OFF',

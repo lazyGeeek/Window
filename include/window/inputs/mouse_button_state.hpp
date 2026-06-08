@@ -1,14 +1,12 @@
 #pragma once
-#ifndef WINDOW_INPUTS_MOUSE_BUTTON_STATE_HPP_
-#define WINDOW_INPUTS_MOUSE_BUTTON_STATE_HPP_
+
+#include <cstdint>
 
 namespace Window::Inputs
 {
-    enum class EMouseButtonState
+    enum class EMouseButtonState : std::uint8_t
     {
         Released,
         Pressed
     };
-}
-
-#endif // WINDOW_INPUTS_MOUSE_BUTTON_STATE_HPP_
+} // namespace Window::Inputs
