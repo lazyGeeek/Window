@@ -1,9 +1,7 @@
 #pragma once
-#ifndef WINDOW_GLFW_HPP_
-#define WINDOW_GLFW_HPP_
 
 #include <memory>
-#include <unordered_map>
+#include <string>
 
 #ifdef WINDOW_USE_VULKAN
 #define GLFW_INCLUDE_VULKAN
@@ -13,6 +11,7 @@
 #include "window/eventing/event_dispatcher.hpp"
 #include "window/monitor.hpp"
 #include "window/utils/non_copyable.hpp"
+#include "window/utils/types.hpp"
 
 namespace Window
 {
@@ -20,14 +19,14 @@ namespace Window
     {
         std::string Title = "";
 
-        int32_t Width  = 1280;
+        int32_t Width = 1280;
         int32_t Height = 720;
     };
 
     class GLFW : public Utils::NonCopyable, public Eventing::Dispatcher
     {
     public:
-        GLFW(WindowInit windowInit = { });
+        GLFW(WindowInit windowInit = {});
         ~GLFW() override;
 
         void SetSize(int32_t width, int32_t height);
@@ -46,35 +45,35 @@ namespace Window
         void Show() const;
         void Focus() const;
 
-        bool ShouldClose() const;
+        [[nodiscard]] bool ShouldClose() const;
 
         void ToggleFullscreen();
 
-        bool IsFullscreen() const;
-        bool IsHidden() const;
-        bool IsVisible() const;
-        bool IsMaximized() const;
-        bool IsMinimized() const;
-        bool IsFocused() const;
-        bool IsResizable() const;
-        bool IsDecorated() const;
+        [[nodiscard]] bool IsFullscreen() const;
+        [[nodiscard]] bool IsHidden() const;
+        [[nodiscard]] bool IsVisible() const;
+        [[nodiscard]] bool IsMaximized() const;
+        [[nodiscard]] bool IsMinimized() const;
+        [[nodiscard]] bool IsFocused() const;
+        [[nodiscard]] bool IsResizable() const;
+        [[nodiscard]] bool IsDecorated() const;
 
 #ifndef WINDOW_USE_VULKAN
         void SwapBuffers() const;
 #endif
         void PollEvents() const;
 
-        std::string GetTitle() const;
+        [[nodiscard]] std::string GetTitle() const;
 
-        std::tuple<int32_t, int32_t> GetSize() const;
-        std::tuple<int32_t, int32_t> GetMinimumSize() const;
-        std::tuple<int32_t, int32_t> GetMaximumSize() const;
-        std::tuple<int32_t, int32_t> GetPosition() const;
-        std::tuple<int32_t, int32_t> GetFramebufferSize() const;
+        [[nodiscard]] std::tuple<int32_t, int32_t> GetSize() const;
+        [[nodiscard]] std::tuple<int32_t, int32_t> GetMinimumSize() const;
+        [[nodiscard]] std::tuple<int32_t, int32_t> GetMaximumSize() const;
+        [[nodiscard]] std::tuple<int32_t, int32_t> GetPosition() const;
+        [[nodiscard]] Utils::SizeInt32 GetFramebufferSize() const;
 
-        bool HasVsync() const;
+        [[nodiscard]] bool HasVsync() const;
 
-        GLFWwindow* GetWindow() const;
+        [[nodiscard]] GLFWwindow* GetWindow() const;
 
         void CloseWindow();
 
@@ -96,22 +95,22 @@ namespace Window
 
         std::string m_title = "";
 
-        int32_t m_width     = 1280;
-        int32_t m_height    = 720;
-        int32_t m_minWidth  = DONT_CARE;
+        int32_t m_width = 1280;
+        int32_t m_height = 720;
+        int32_t m_minWidth = DONT_CARE;
         int32_t m_minHeight = DONT_CARE;
-        int32_t m_maxWidth  = DONT_CARE;
+        int32_t m_maxWidth = DONT_CARE;
         int32_t m_maxHeight = DONT_CARE;
-        int32_t m_posX      = DONT_CARE;
-        int32_t m_posY      = DONT_CARE;
+        int32_t m_posX = DONT_CARE;
+        int32_t m_posY = DONT_CARE;
 
-        bool m_fullscreen  = false;
-        bool m_decorated   = true;
-        bool m_resizable   = true;
-        bool m_focused     = true;
-        bool m_maximized   = false;
-        bool m_floating    = false;
-        bool m_visible     = true;
+        bool m_fullscreen = false;
+        bool m_decorated = true;
+        bool m_resizable = true;
+        bool m_focused = true;
+        bool m_maximized = false;
+        bool m_floating = false;
+        bool m_visible = true;
         bool m_autoIconify = true;
 
         int32_t m_refreshRate = DONT_CARE;
@@ -119,6 +118,4 @@ namespace Window
 
         bool m_vsync = false;
     };
-}
-
-#endif // WINDOW_GLFW_HPP_
+} // namespace Window

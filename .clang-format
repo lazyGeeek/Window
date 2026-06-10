@@ -1,6 +1,6 @@
 ---
 Language:        Cpp
-# AccessModifierOffset: -2
+AccessModifierOffset: -4
 # AlignAfterOpenBracket: Align
 # AlignArrayOfStructures: None
 # AlignConsecutiveAssignments:
@@ -107,7 +107,7 @@ BraceWrapping:
 #   BeforeElse:      false
 #   BeforeLambdaBody: false
 #   BeforeWhile:     false
-#   IndentBraces:    false
+  IndentBraces:    true
   SplitEmptyFunction: false
 #   SplitEmptyRecord: true
 #   SplitEmptyNamespace: true
@@ -127,13 +127,13 @@ BreakBeforeBraces: Custom
 # BreakFunctionDefinitionParameters: false
 # BreakInheritanceList: BeforeColon
 # BreakStringLiterals: true
-# BreakTemplateDeclarations: MultiLine
+BreakTemplateDeclarations: Yes
 ColumnLimit:     80
 CommentPragmas:  '^ IWYU pragma:'
 # CompactNamespaces: false
 # ConstructorInitializerIndentWidth: 4
 # ContinuationIndentWidth: 4
-# Cpp11BracedListStyle: true
+Cpp11BracedListStyle: false
 # DerivePointerAlignment: false
 # DisableFormat:   false
 # EmptyLineAfterAccessModifier: Never
@@ -237,13 +237,13 @@ SortIncludes:
 # SortUsingDeclarations: LexicographicNumeric
 # SpaceAfterCStyleCast: false
 # SpaceAfterLogicalNot: false
-# SpaceAfterOperatorKeyword: false
-# SpaceAfterTemplateKeyword: true
+SpaceAfterOperatorKeyword: false
+SpaceAfterTemplateKeyword: true
 # SpaceAroundPointerQualifiers: Default
 # SpaceBeforeAssignmentOperators: true
 # SpaceBeforeCaseColon: false
-# SpaceBeforeCpp11BracedList: false
-# SpaceBeforeCtorInitializerColon: true
+SpaceBeforeCpp11BracedList: true
+SpaceBeforeCtorInitializerColon: true
 # SpaceBeforeInheritanceColon: true
 # SpaceBeforeJsonColon: false
 # SpaceBeforeParens: ControlStatements
@@ -261,8 +261,8 @@ SortIncludes:
 #   BeforeNonEmptyParentheses: false
 # SpaceBeforeRangeBasedForLoopColon: true
 # SpaceBeforeSquareBrackets: false
-# SpaceInEmptyBlock: false
-# SpacesBeforeTrailingComments: 1
+SpaceInEmptyBlock: true
+SpacesBeforeTrailingComments: 1
 # SpacesInAngles:  Never
 # SpacesInContainerLiterals: true
 # SpacesInLineCommentPrefix:

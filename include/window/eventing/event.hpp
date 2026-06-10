@@ -1,15 +1,13 @@
 #pragma once
-#ifndef WINDOW_EVENTING_EVENT_HPP_
-#define WINDOW_EVENTING_EVENT_HPP_
 
 #include <string>
 
 namespace Window::Eventing
 {
-    enum class EEventType
+    enum class EEventType : std::uint8_t
     {
         None = 0,
-        
+
         WindowClose,
         WindowResize,
         WindowMove,
@@ -19,24 +17,24 @@ namespace Window::Eventing
         WindowLostFocus,
         WindowGainFocus,
         FramebufferResize,
-        
+
         KeyPress,
         KeyRelease,
-        
+
         MouseButtonPress,
         MouseButtonRelease,
         MouseMove,
         MouseScroll,
+
+        EventEnumEnd
     };
 
     class IEvent
     {
-    public:
-        virtual ~IEvent() { };
+      public:
+        virtual ~IEvent() = default;
 
-        virtual EEventType GetEventType() const = 0;
-        virtual std::string ToString()    const = 0;
+        [[nodiscard]] virtual EEventType GetEventType() const = 0;
+        [[nodiscard]] virtual std::string ToString() const = 0;
     };
-}
-
-#endif // WINDOW_EVENTING_EVENT_HPP_
+} // namespace Window::Eventing

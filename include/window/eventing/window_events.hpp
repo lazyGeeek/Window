@@ -1,114 +1,192 @@
 #pragma once
-#ifndef WINDOW_EVENTING_WINDOW_EVENTS_HPP_
-#define WINDOW_EVENTING_WINDOW_EVENTS_HPP_
 
 #include "window/eventing/event.hpp"
-
-#include <tuple>
+#include "window/utils/types.hpp"
 
 namespace Window::Eventing
 {
     class WindowResizeEvent : public IEvent
     {
     public:
-        WindowResizeEvent(int32_t width, int32_t height) :
-            m_width { width }, m_height { height } { }
+        WindowResizeEvent(Utils::SizeInt32 size) : m_size { size }
+        { }
 
-        inline std::tuple<int32_t, int32_t> GetSize() const { return { m_width, m_height }; }
+        [[nodiscard]] inline Utils::SizeInt32 GetSize() const
+        {
+            return m_size;
+        }
 
-        inline int32_t GetWidth() const { return m_width; }
-        inline int32_t GetHeight() const { return m_height; }
+        [[nodiscard]] inline int32_t GetWidth() const
+        {
+            return m_size.Width;
+        }
 
-        virtual EEventType GetEventType() const override { return EEventType::WindowResize; }
-        virtual std::string ToString()    const override { return "Window Resize Event"; }
+        [[nodiscard]] inline int32_t GetHeight() const
+        {
+            return m_size.Height;
+        }
+
+        [[nodiscard]] EEventType GetEventType() const override
+        {
+            return EEventType::WindowResize;
+        }
+
+        [[nodiscard]] std::string ToString() const override
+        {
+            return "Window Resize Event";
+        }
 
     private:
-        int32_t m_width  = 0;
-        int32_t m_height = 0;
+        Utils::SizeInt32 m_size { .Width = 0, .Height = 0 };
     };
 
     class FramebufferResizeEvent : public IEvent
     {
     public:
-        FramebufferResizeEvent(int32_t width, int32_t height) :
-            m_width { width }, m_height { height } { }
+        FramebufferResizeEvent(Utils::SizeInt32 size) : m_size { size }
+        { }
 
-        inline std::tuple<int32_t, int32_t> GetSize() const { return { m_width, m_height }; }
+        [[nodiscard]] inline Utils::SizeInt32 GetSize() const
+        {
+            return m_size;
+        }
 
-        inline int32_t GetWidth() const { return m_width; }
-        inline int32_t GetHeight() const { return m_height; }
+        [[nodiscard]] inline int32_t GetWidth() const
+        {
+            return m_size.Width;
+        }
 
-        virtual EEventType GetEventType() const override { return EEventType::FramebufferResize; }
-        virtual std::string ToString()    const override { return "Framebuffer Resize Event"; }
+        [[nodiscard]] inline int32_t GetHeight() const
+        {
+            return m_size.Height;
+        }
+
+        [[nodiscard]] EEventType GetEventType() const override
+        {
+            return EEventType::FramebufferResize;
+        }
+
+        [[nodiscard]] std::string ToString() const override
+        {
+            return "Framebuffer Resize Event";
+        }
 
     private:
-        int32_t m_width  = 0;
-        int32_t m_height = 0;
+        Utils::SizeInt32 m_size { .Width = 0, .Height = 0 };
     };
 
     class WindowMoveEvent : public IEvent
     {
     public:
-        WindowMoveEvent(int32_t posX, int32_t posY) :
-            m_posX { posX }, m_posY { posY } { }
+        WindowMoveEvent(Utils::PositionInt32 pos) : m_pos { pos }
+        { }
 
-        inline std::tuple<int32_t, int32_t> GetPosition() const { return { m_posX, m_posY }; }
+        [[nodiscard]] inline Utils::PositionInt32 GetPosition() const
+        {
+            return m_pos;
+        }
 
-        inline int32_t GetPosX() const { return m_posX; }
-        inline int32_t GetPosY() const { return m_posY; }
+        [[nodiscard]] inline int32_t GetPosX() const
+        {
+            return m_pos.X;
+        }
 
-        virtual EEventType GetEventType() const override { return EEventType::WindowMove; }
-        virtual std::string ToString()    const override { return "Window Move Event"; }
+        [[nodiscard]] inline int32_t GetPosY() const
+        {
+            return m_pos.Y;
+        }
+
+        [[nodiscard]] EEventType GetEventType() const override
+        {
+            return EEventType::WindowMove;
+        }
+
+        [[nodiscard]] std::string ToString() const override
+        {
+            return "Window Move Event";
+        }
 
     private:
-        int32_t m_posX = 0;
-        int32_t m_posY = 0;
+        Utils::PositionInt32 m_pos { .X = 0, .Y = 0 };
     };
 
     class WindowCloseEvent : public IEvent
     {
     public:
-        WindowCloseEvent() { }
+        WindowCloseEvent() = default;
 
-        virtual EEventType GetEventType() const override { return EEventType::WindowClose; }
-        virtual std::string ToString()    const override { return "Window Close Event"; }
+        [[nodiscard]] EEventType GetEventType() const override
+        {
+            return EEventType::WindowClose;
+        }
+
+        [[nodiscard]] std::string ToString() const override
+        {
+            return "Window Close Event";
+        }
     };
 
     class WindowMinimizeEvent : public IEvent
     {
     public:
-        WindowMinimizeEvent() { }
+        WindowMinimizeEvent() = default;
 
-        virtual EEventType GetEventType() const override { return EEventType::WindowMinimize; }
-        virtual std::string ToString()    const override { return "Window Minimize Event"; }
+        [[nodiscard]] EEventType GetEventType() const override
+        {
+            return EEventType::WindowMinimize;
+        }
+
+        [[nodiscard]] std::string ToString() const override
+        {
+            return "Window Minimize Event";
+        }
     };
 
     class WindowMaximizeEvent : public IEvent
     {
     public:
-        WindowMaximizeEvent() { }
+        WindowMaximizeEvent() = default;
 
-        virtual EEventType GetEventType() const override { return EEventType::WindowMaximize; }
-        virtual std::string ToString()    const override { return "Window Maximize Event"; }
+        [[nodiscard]] EEventType GetEventType() const override
+        {
+            return EEventType::WindowMaximize;
+        }
+
+        [[nodiscard]] std::string ToString() const override
+        {
+            return "Window Maximize Event";
+        }
     };
 
     class WindowGainFocusEvent : public IEvent
     {
     public:
-        WindowGainFocusEvent() { }
+        WindowGainFocusEvent() = default;
 
-        virtual EEventType GetEventType() const override { return EEventType::WindowGainFocus; }
-        virtual std::string ToString()    const override { return "Window GainFocus Event"; }
+        [[nodiscard]] EEventType GetEventType() const override
+        {
+            return EEventType::WindowGainFocus;
+        }
+
+        [[nodiscard]] std::string ToString() const override
+        {
+            return "Window GainFocus Event";
+        }
     };
 
     class WindowLostFocusEvent : public IEvent
     {
     public:
-        WindowLostFocusEvent() { }
+        WindowLostFocusEvent() = default;
 
-        virtual EEventType GetEventType() const override { return EEventType::WindowLostFocus; }
-        virtual std::string ToString()    const override { return "Window Lost Focus Event"; }
+        [[nodiscard]] EEventType GetEventType() const override
+        {
+            return EEventType::WindowLostFocus;
+        }
+
+        [[nodiscard]] std::string ToString() const override
+        {
+            return "Window Lost Focus Event";
+        }
     };
-}
-
-#endif // WINDOW_EVENTING_WINDOW_EVENTS_HPP_
+} // namespace Window::Eventing
