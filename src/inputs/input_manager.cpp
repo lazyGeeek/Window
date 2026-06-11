@@ -4,19 +4,26 @@
 
 namespace Window::Inputs
 {
-    InputManager::InputManager(GLFWwindow* window) : m_window { window } { }
+    InputManager::InputManager(const GLFW& glfw) : m_glfw { glfw }
+    { }
 
     EKeyState InputManager::GetKeyState(EKey key) const
     {
-        if (m_window && glfwGetKey(m_window, static_cast<int>(key)) == GLFW_PRESS)
+        GLFWwindow* window = m_glfw.GetWindow();
+
+        if (window && glfwGetKey(window, static_cast<int>(key)) == GLFW_PRESS)
             return EKeyState::Pressed;
 
         return EKeyState::Released;
     }
 
-    EMouseButtonState InputManager::GetMouseButtonState(EMouseButton button) const
+    EMouseButtonState
+    InputManager::GetMouseButtonState(EMouseButton button) const
     {
-        if (m_window && glfwGetMouseButton(m_window, static_cast<int>(button)) == GLFW_PRESS)
+        GLFWwindow* window = m_glfw.GetWindow();
+
+        if (window &&
+            glfwGetMouseButton(window, static_cast<int>(button)) == GLFW_PRESS)
             return EMouseButtonState::Pressed;
 
         return EMouseButtonState::Released;
@@ -41,4 +48,4 @@ namespace Window::Inputs
     {
         return GetMouseButtonState(button) == EMouseButtonState::Released;
     }
-}
+} // namespace Window::Inputs

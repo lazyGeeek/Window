@@ -1,33 +1,29 @@
 #pragma once
-#ifndef WINDOW_INPUTS_INPUT_MANAGER_HPP_
-#define WINDOW_INPUTS_INPUT_MANAGER_HPP_
 
+#include "window/glfw.hpp"
 #include "window/inputs/key.hpp"
 #include "window/inputs/key_state.hpp"
 #include "window/inputs/mouse_button.hpp"
 #include "window/inputs/mouse_button_state.hpp"
 #include "window/utils/non_copyable.hpp"
 
-struct GLFWwindow;
-
 namespace Window::Inputs
 {
     class InputManager : public Utils::NonCopyable
     {
     public:
-        InputManager(GLFWwindow* window);
+        InputManager(const GLFW& glfw);
 
-        EKeyState GetKeyState(EKey key) const;
-        EMouseButtonState GetMouseButtonState(EMouseButton button) const;
+        [[nodiscard]] EKeyState GetKeyState(EKey key) const;
+        [[nodiscard]] EMouseButtonState
+        GetMouseButtonState(EMouseButton button) const;
 
-        bool IsKeyPressed(EKey key) const;
-        bool IsKeyReleased(EKey key) const;
-        bool IsMouseButtonPressed(EMouseButton button) const;
-        bool IsMouseButtonReleased(EMouseButton button) const;
+        [[nodiscard]] bool IsKeyPressed(EKey key) const;
+        [[nodiscard]] bool IsKeyReleased(EKey key) const;
+        [[nodiscard]] bool IsMouseButtonPressed(EMouseButton button) const;
+        [[nodiscard]] bool IsMouseButtonReleased(EMouseButton button) const;
 
     private:
-        GLFWwindow* m_window = nullptr;
+        const GLFW& m_glfw;
     };
-}
-
-#endif // WINDOW_INPUTS_INPUT_MANAGER_HPP_
+} // namespace Window::Inputs
