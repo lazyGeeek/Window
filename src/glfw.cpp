@@ -25,16 +25,16 @@ namespace Window
                 const auto& resize =
                     dynamic_cast<Eventing::WindowResizeEvent&>(event);
                 onResize(resize.GetWidth(), resize.GetHeight());
-        }
+            }
         });
     }
 
     GLFW::~GLFW()
     {
         RemoveAllListeners();
-            if (m_window) {
-                glfwDestroyWindow(m_window);
-                m_window = nullptr;
+        if (m_window) {
+            glfwDestroyWindow(m_window);
+            m_window = nullptr;
         }
         glfwTerminate();
     }
@@ -54,9 +54,9 @@ namespace Window
 
         glfwSetErrorCallback(errorCallback);
 
-            if (glfwInit() == GLFW_FALSE) {
-                glfwTerminate();
-                throw std::runtime_error("[GLFW] Failed to Init GLFW");
+        if (glfwInit() == GLFW_FALSE) {
+            glfwTerminate();
+            throw std::runtime_error("[GLFW] Failed to Init GLFW");
         }
 
 #ifdef WINDOW_USE_VULKAN
@@ -100,7 +100,8 @@ namespace Window
 
         glfwSetWindowUserPointer(m_window, this);
 
-        m_monitor = std::make_unique<Monitor>(m_posX, m_posY);
+        Utils::PositionInt32 pos { .X = m_posX, .Y = m_posY };
+        m_monitor = std::make_unique<Monitor>(pos);
     }
 
     void GLFW::bindEventCallbacks()
@@ -110,18 +111,18 @@ namespace Window
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-                if (current) {
-                        if (action == GLFW_PRESS) {
-                            Eventing::KeyPressEvent pressEvent(
-                                static_cast<Inputs::EKey>(key));
-                            current->Invoke(pressEvent);
-                    }
+            if (current) {
+                if (action == GLFW_PRESS) {
+                    Eventing::KeyPressEvent pressEvent(
+                        static_cast<Inputs::EKey>(key));
+                    current->Invoke(pressEvent);
+                }
 
-                        if (action == GLFW_RELEASE) {
-                            Eventing::KeyReleaseEvent releaseEvent(
-                                static_cast<Inputs::EKey>(key));
-                            current->Invoke(releaseEvent);
-                    }
+                if (action == GLFW_RELEASE) {
+                    Eventing::KeyReleaseEvent releaseEvent(
+                        static_cast<Inputs::EKey>(key));
+                    current->Invoke(releaseEvent);
+                }
             }
         };
 
@@ -132,18 +133,18 @@ namespace Window
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-                if (current) {
-                        if (action == GLFW_PRESS) {
-                            Eventing::MousePressEvent pressEvent(
-                                static_cast<Inputs::EMouseButton>(button));
-                            current->Invoke(pressEvent);
-                    }
+            if (current) {
+                if (action == GLFW_PRESS) {
+                    Eventing::MousePressEvent pressEvent(
+                        static_cast<Inputs::EMouseButton>(button));
+                    current->Invoke(pressEvent);
+                }
 
-                        if (action == GLFW_RELEASE) {
-                            Eventing::MouseReleaseEvent releaseEvent(
-                                static_cast<Inputs::EMouseButton>(button));
-                            current->Invoke(releaseEvent);
-                    }
+                if (action == GLFW_RELEASE) {
+                    Eventing::MouseReleaseEvent releaseEvent(
+                        static_cast<Inputs::EMouseButton>(button));
+                    current->Invoke(releaseEvent);
+                }
             }
         };
 
@@ -153,10 +154,10 @@ namespace Window
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-                if (current) {
-                    Utils::PositionDouble pos { .X = x, .Y = y };
-                    Eventing::MouseMoveEvent moveEvent(pos);
-                    current->Invoke(moveEvent);
+            if (current) {
+                Utils::PositionDouble pos { .X = x, .Y = y };
+                Eventing::MouseMoveEvent moveEvent(pos);
+                current->Invoke(moveEvent);
             }
         };
 
@@ -167,10 +168,10 @@ namespace Window
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-                if (current) {
-                    Utils::OffsetDouble offset { .X = offsetX, .Y = offsetY };
-                    Eventing::MouseScrollEvent scrollEvent(offset);
-                    current->Invoke(scrollEvent);
+            if (current) {
+                Utils::OffsetDouble offset { .X = offsetX, .Y = offsetY };
+                Eventing::MouseScrollEvent scrollEvent(offset);
+                current->Invoke(scrollEvent);
             }
         };
 
@@ -180,10 +181,10 @@ namespace Window
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-                if (current) {
-                    Eventing::WindowResizeEvent resizeEvent(
-                        { .Width = width, .Height = height });
-                    current->Invoke(resizeEvent);
+            if (current) {
+                Eventing::WindowResizeEvent resizeEvent(
+                    { .Width = width, .Height = height });
+                current->Invoke(resizeEvent);
             }
         };
 
@@ -194,10 +195,10 @@ namespace Window
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-                if (current) {
-                    Eventing::FramebufferResizeEvent resizeEvent(
-                        { .Width = width, .Height = height });
-                    current->Invoke(resizeEvent);
+            if (current) {
+                Eventing::FramebufferResizeEvent resizeEvent(
+                    { .Width = width, .Height = height });
+                current->Invoke(resizeEvent);
             }
         };
 
@@ -207,10 +208,10 @@ namespace Window
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-                if (current) {
-                    Utils::PositionInt32 pos { .X = x, .Y = y };
-                    Eventing::WindowMoveEvent moveEvent(pos);
-                    current->Invoke(moveEvent);
+            if (current) {
+                Utils::PositionInt32 pos { .X = x, .Y = y };
+                Eventing::WindowMoveEvent moveEvent(pos);
+                current->Invoke(moveEvent);
             }
         };
 
@@ -220,16 +221,16 @@ namespace Window
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-                if (current) {
-                        if (iconified == GLFW_TRUE) {
-                            Eventing::WindowMinimizeEvent minEvent;
-                            current->Invoke(minEvent);
-                    }
+            if (current) {
+                if (iconified == GLFW_TRUE) {
+                    Eventing::WindowMinimizeEvent minEvent;
+                    current->Invoke(minEvent);
+                }
 
-                        if (iconified == GLFW_FALSE) {
-                            Eventing::WindowMaximizeEvent maxEvent;
-                            current->Invoke(maxEvent);
-                    }
+                if (iconified == GLFW_FALSE) {
+                    Eventing::WindowMaximizeEvent maxEvent;
+                    current->Invoke(maxEvent);
+                }
             }
         };
 
@@ -239,16 +240,16 @@ namespace Window
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-                if (current) {
-                        if (focused == GLFW_TRUE) {
-                            Eventing::WindowGainFocusEvent gainEvent;
-                            current->Invoke(gainEvent);
-                    }
+            if (current) {
+                if (focused == GLFW_TRUE) {
+                    Eventing::WindowGainFocusEvent gainEvent;
+                    current->Invoke(gainEvent);
+                }
 
-                        if (focused == GLFW_FALSE) {
-                            Eventing::WindowLostFocusEvent lostEvent;
-                            current->Invoke(lostEvent);
-                    }
+                if (focused == GLFW_FALSE) {
+                    Eventing::WindowLostFocusEvent lostEvent;
+                    current->Invoke(lostEvent);
+                }
             }
         };
 
@@ -258,9 +259,9 @@ namespace Window
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-                if (current) {
-                    Eventing::WindowCloseEvent closeEvent;
-                    current->Invoke(closeEvent);
+            if (current) {
+                Eventing::WindowCloseEvent closeEvent;
+                current->Invoke(closeEvent);
             }
         };
 
@@ -284,8 +285,10 @@ namespace Window
         m_posX = x;
         m_posY = y;
 
+        Utils::PositionInt32 pos { .X = m_posX, .Y = m_posY };
+
         if (m_monitor)
-            m_monitor->UpdateMonitor(m_posX, m_posY);
+            m_monitor->UpdateMonitor(pos);
     }
 
     void GLFW::CloseWindow()
@@ -335,12 +338,12 @@ namespace Window
     {
         m_fullscreen = value;
 
-            if (m_fullscreen && m_monitor) {
-                VideoMode mode = m_monitor->GetVideoMode();
-                const auto [posX, posY] = m_monitor->GetPosition();
-                glfwSetWindowMonitor(m_window, m_monitor->GetMonitor(), posX,
-                                     posY, mode.Width, mode.Height,
-                                     m_refreshRate);
+        if (m_fullscreen && m_monitor) {
+            VideoMode mode = m_monitor->GetVideoMode();
+            const auto [posX, posY] = m_monitor->GetPosition();
+            glfwSetWindowMonitor(m_window, m_monitor->GetMonitor(), posX, posY,
+                                 mode.Size.Width, mode.Size.Height,
+                                 m_refreshRate);
         } else
             glfwSetWindowMonitor(m_window, nullptr, m_posX, m_posY, m_width,
                                  m_height, m_refreshRate);

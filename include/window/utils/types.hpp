@@ -41,8 +41,21 @@ namespace Window::Utils
         }
     };
 
+    template <SizeElement T>
+    struct Scale
+    {
+        T X;
+        T Y;
+
+        bool operator==(const Scale& other) const
+        {
+            return Comparator<T>(X, other.X) && Comparator<T>(Y, other.Y);
+        }
+    };
+
     using SizeInt32 = Utils::Size<int32_t>;
     using PositionInt32 = Utils::Position<int32_t>;
     using PositionDouble = Utils::Position<double>;
     using OffsetDouble = Utils::Offset<double>;
+    using ScaleFloat = Utils::Scale<float>;
 } // namespace Window::Utils

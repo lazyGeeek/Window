@@ -54,6 +54,16 @@ namespace Window::Utils
         EXPECT_FALSE(x == z);
     }
 
+    TEST(ScaleTest, FloatEquality)
+    {
+        Scale<float> x { 2.5f, 3.3f };
+        Scale<float> y { 2.5f, 3.3f };
+        Scale<float> z { 5.3f, 8.5f };
+
+        EXPECT_TRUE(x == y);
+        EXPECT_FALSE(x == z);
+    }
+
     struct EqLike
     {
         int v;
@@ -85,6 +95,13 @@ namespace Window::Utils
 
         EXPECT_TRUE(ox == oy);
         EXPECT_FALSE(ox == oz);
+
+        Scale<EqLike> scx { { 1 }, { 2 } };
+        Scale<EqLike> scy { { 1 }, { 2 } };
+        Scale<EqLike> scz { { 2 }, { 3 } };
+
+        EXPECT_TRUE(scx == scy);
+        EXPECT_FALSE(scx == scz);
     }
 
     static_assert(std::is_same_v<Size<int>, Size<int>>);       // numeric
@@ -95,6 +112,9 @@ namespace Window::Utils
 
     static_assert(std::is_same_v<Offset<float>, Offset<float>>);
     static_assert(std::is_same_v<Offset<EqLike>, Offset<EqLike>>);
+
+    static_assert(std::is_same_v<Scale<float>, Scale<float>>);
+    static_assert(std::is_same_v<Scale<EqLike>, Scale<EqLike>>);
 
     template <typename T, typename = void>
     struct is_size_instantiable : std::false_type
@@ -140,5 +160,18 @@ namespace Window::Utils
 
     static_assert(!is_offset_instantiable<NoEq>::value,
                   "Offset<NoEq> should not be instantiable");
+
+    template <typename T, typename = void>
+    struct is_scale_instantiable : std::false_type
+    {
+    };
+
+    template <typename T>
+    struct is_scale_instantiable<T, std::void_t<Scale<T>>> : std::true_type
+    {
+    };
+
+    static_assert(!is_scale_instantiable<NoEq>::value,
+                  "Scale<NoEq> should not be instantiable");
 
 } // namespace Window::Utils

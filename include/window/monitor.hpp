@@ -1,12 +1,9 @@
 #pragma once
-#ifndef WINDOW_MONITOR_HPP_
-#define WINDOW_MONITOR_HPP_
 
 #include "window/utils/non_copyable.hpp"
+#include "window/utils/types.hpp"
 
-#include <stdint.h>
 #include <string>
-#include <tuple>
 #include <vector>
 
 struct GLFWmonitor;
@@ -17,8 +14,7 @@ namespace Window
 {
     struct VideoMode
     {
-        int32_t Width;
-        int32_t Height;
+        Utils::SizeInt32 Size;
         int32_t RedBits;
         int32_t GreenBits;
         int32_t BlueBits;
@@ -30,15 +26,13 @@ namespace Window
         uint16_t* Red;
         uint16_t* Green;
         uint16_t* Blue;
-        uint32_t  Size;
+        uint32_t Size;
     };
 
     struct MonitorInfo
     {
-        int32_t PosX;
-        int32_t PosY;
-        int32_t Width;
-        int32_t Height;
+        Utils::PositionInt32 Pos;
+        Utils::SizeInt32 Size;
         int32_t RefreshRate;
     };
 
@@ -46,33 +40,32 @@ namespace Window
     {
     public:
         Monitor(GLFWmonitor* monitor);
-        Monitor(int32_t posX, int32_t posY);
+        Monitor(Utils::PositionInt32 pos);
 
         static GLFWmonitor* GetPrimaryMonitor();
-        GLFWmonitor* GetMonitor() const;
+        [[nodiscard]] GLFWmonitor* GetMonitor() const;
 
-        void UpdateMonitor(int32_t posX, int32_t posY);
+        void UpdateMonitor(Utils::PositionInt32 pos);
 
-        bool IsPrimary() const;
+        [[nodiscard]] bool IsPrimary() const;
 
-        std::tuple<int32_t, int32_t> GetWorkareaSize() const;
-        std::tuple<int32_t, int32_t> GetWorkareaPosition() const;
-        std::tuple<int32_t, int32_t> GetSize() const;
-        std::tuple<float, float>     GetContentScale() const;
-        std::tuple<int32_t, int32_t> GetPosition() const;
+        [[nodiscard]] Utils::SizeInt32 GetWorkareaSize() const;
+        [[nodiscard]] Utils::PositionInt32 GetWorkareaPosition() const;
+        [[nodiscard]] Utils::SizeInt32 GetSize() const;
+        [[nodiscard]] Utils::ScaleFloat GetContentScale() const;
+        [[nodiscard]] Utils::PositionInt32 GetPosition() const;
 
-        std::string GetName() const;
-        std::vector<VideoMode> GetVideoModes() const;
-        VideoMode GetVideoMode() const;
-        GammaRamp GetGammaRamp() const;
-        
+        [[nodiscard]] std::string GetName() const;
+        [[nodiscard]] std::vector<VideoMode> GetVideoModes() const;
+        [[nodiscard]] VideoMode GetVideoMode() const;
+        [[nodiscard]] GammaRamp GetGammaRamp() const;
+
         void SetGammaRamp(const GammaRamp& gammaRamp) const;
 
     private:
-        VideoMode videoModeConverter(const GLFWvidmode& mode) const;
+        [[nodiscard]] VideoMode
+        videoModeConverter(const GLFWvidmode& mode) const;
 
         GLFWmonitor* m_monitor = nullptr;
     };
-}
-
-#endif // WINDOW_MONITOR_HPP_
+} // namespace Window
