@@ -46,9 +46,9 @@ namespace Window::Cursor
             ECursorShape::Hand,  ECursorShape::HResize, ECursorShape::VResize,
         };
 
-            for (auto shape : shapes) {
-                EXPECT_NO_THROW(m_cursor->SetShape(shape));
-            }
+        for (auto shape : shapes) {
+            EXPECT_NO_THROW(m_cursor->SetShape(shape));
+        }
     }
 
     TEST_F(CursorFixture, DestructorReleasesCursors)

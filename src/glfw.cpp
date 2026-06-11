@@ -4,11 +4,12 @@
 
 #include "window/monitor.hpp"
 
+#include <format>
 #include <stdexcept>
 
 namespace Window
 {
-    GLFW::GLFW(WindowInit windowInit)
+    GLFW::GLFW(const WindowInit& windowInit)
     {
         parseInit(windowInit);
         createGLFWWindow();
@@ -19,12 +20,12 @@ namespace Window
                 Window::Eventing::EEventType::WindowMove) {
                 const auto& move =
                     dynamic_cast<Eventing::WindowMoveEvent&>(event);
-                onMove(move.GetPosX(), move.GetPosY());
+                onMove(move.GetPosition());
             } else if (event.GetEventType() ==
                        Window::Eventing::EEventType::WindowResize) {
                 const auto& resize =
                     dynamic_cast<Eventing::WindowResizeEvent&>(event);
-                onResize(resize.GetWidth(), resize.GetHeight());
+                onResize(resize.GetSize());
             }
         });
     }
@@ -42,21 +43,22 @@ namespace Window
     void GLFW::parseInit(const WindowInit& windowInit)
     {
         m_title = windowInit.Title;
-        m_width = windowInit.Width;
-        m_height = windowInit.Height;
+        m_size = windowInit.Size;
     }
 
     void GLFW::createGLFWWindow()
     {
         auto errorCallback = [](int code, const char* description) {
-            throw std::runtime_error(description);
+            throw std::runtime_error(
+                std::format("GLFW ERROR :: Code: ({}) :: Description: {}", code,
+                            description));
         };
 
         glfwSetErrorCallback(errorCallback);
 
         if (glfwInit() == GLFW_FALSE) {
             glfwTerminate();
-            throw std::runtime_error("[GLFW] Failed to Init GLFW");
+            throw std::runtime_error("GLFW ERROR :: Failed to Init GLFW");
         }
 
 #ifdef WINDOW_USE_VULKAN
@@ -67,7 +69,7 @@ namespace Window
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif
 
-        glfwWindowHint(GLFW_SAMPLES, m_samples);
+        glfwWindowHint(GLFW_SAMPLES, static_cast<int>(m_samples));
         glfwWindowHint(GLFW_RESIZABLE, m_resizable);
         glfwWindowHint(GLFW_DECORATED, m_decorated);
         glfwWindowHint(GLFW_FOCUSED, m_focused);
@@ -77,19 +79,20 @@ namespace Window
         glfwWindowHint(GLFW_AUTO_ICONIFY, m_autoIconify);
         glfwWindowHint(GLFW_REFRESH_RATE, m_refreshRate);
 
-        m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr,
-                                    nullptr);
+        m_window = glfwCreateWindow(m_size.Width, m_size.Height,
+                                    m_title.c_str(), nullptr, nullptr);
 
         if (!m_window)
-            throw std::runtime_error("[GLFW] Failed to create GLFW window");
+            throw std::runtime_error(
+                "GLFW ERROR :: Failed to create GLFW window");
 
-        if (m_posX == DONT_CARE && m_posY == DONT_CARE)
-            glfwGetWindowPos(m_window, &m_posX, &m_posY);
+        if (m_pos == Utils::PositionInt32 { .X = DONT_CARE, .Y = DONT_CARE })
+            glfwGetWindowPos(m_window, &m_pos.X, &m_pos.Y);
         else
-            glfwSetWindowPos(m_window, m_posX, m_posY);
+            glfwSetWindowPos(m_window, m_pos.X, m_pos.Y);
 
-        glfwSetWindowSizeLimits(m_window, m_minWidth, m_minHeight, m_maxWidth,
-                                m_maxHeight);
+        glfwSetWindowSizeLimits(m_window, m_minSize.Width, m_minSize.Height,
+                                m_maxSize.Width, m_maxSize.Height);
 
         if (m_fullscreen)
             SetFullscreen(true);
@@ -100,65 +103,70 @@ namespace Window
 
         glfwSetWindowUserPointer(m_window, this);
 
-        Utils::PositionInt32 pos { .X = m_posX, .Y = m_posY };
-        m_monitor = std::make_unique<Monitor>(pos);
+        m_monitor = std::make_unique<Monitor>(m_pos);
     }
 
     void GLFW::bindEventCallbacks()
     {
-        auto keyCallback = [](GLFWwindow* window, int key, int scancode,
-                              int action, int mods) {
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+        auto keyCallback = [](GLFWwindow* window, int key,
+                              __attribute__((unused)) int scancode, int action,
+                              __attribute__((unused)) int mods) {
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-            if (current) {
-                if (action == GLFW_PRESS) {
-                    Eventing::KeyPressEvent pressEvent(
-                        static_cast<Inputs::EKey>(key));
-                    current->Invoke(pressEvent);
-                }
+            if (!current)
+                return;
 
-                if (action == GLFW_RELEASE) {
-                    Eventing::KeyReleaseEvent releaseEvent(
-                        static_cast<Inputs::EKey>(key));
-                    current->Invoke(releaseEvent);
-                }
+            if (action == GLFW_PRESS) {
+                Eventing::KeyPressEvent pressEvent(
+                    static_cast<Inputs::EKey>(key));
+                current->Invoke(pressEvent);
+            }
+
+            if (action == GLFW_RELEASE) {
+                Eventing::KeyReleaseEvent releaseEvent(
+                    static_cast<Inputs::EKey>(key));
+                current->Invoke(releaseEvent);
             }
         };
 
         glfwSetKeyCallback(m_window, keyCallback);
 
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
         auto mouseCallback = [](GLFWwindow* window, int button, int action,
-                                int mods) {
+                                __attribute__((unused)) int mods) {
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-            if (current) {
-                if (action == GLFW_PRESS) {
-                    Eventing::MousePressEvent pressEvent(
-                        static_cast<Inputs::EMouseButton>(button));
-                    current->Invoke(pressEvent);
-                }
+            if (!current)
+                return;
 
-                if (action == GLFW_RELEASE) {
-                    Eventing::MouseReleaseEvent releaseEvent(
-                        static_cast<Inputs::EMouseButton>(button));
-                    current->Invoke(releaseEvent);
-                }
+            if (action == GLFW_PRESS) {
+                Eventing::MousePressEvent pressEvent(
+                    static_cast<Inputs::EMouseButton>(button));
+                current->Invoke(pressEvent);
+            }
+
+            if (action == GLFW_RELEASE) {
+                Eventing::MouseReleaseEvent releaseEvent(
+                    static_cast<Inputs::EMouseButton>(button));
+                current->Invoke(releaseEvent);
             }
         };
 
         glfwSetMouseButtonCallback(m_window, mouseCallback);
 
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
         auto cursorMoveCallback = [](GLFWwindow* window, double x, double y) {
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-            if (current) {
-                Utils::PositionDouble pos { .X = x, .Y = y };
-                Eventing::MouseMoveEvent moveEvent(pos);
-                current->Invoke(moveEvent);
-            }
+            if (!current)
+                return;
+
+            Eventing::MouseMoveEvent moveEvent({ .X = x, .Y = y });
+            current->Invoke(moveEvent);
         };
 
         glfwSetCursorPosCallback(m_window, cursorMoveCallback);
@@ -168,51 +176,57 @@ namespace Window
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-            if (current) {
-                Utils::OffsetDouble offset { .X = offsetX, .Y = offsetY };
-                Eventing::MouseScrollEvent scrollEvent(offset);
-                current->Invoke(scrollEvent);
-            }
+            if (!current)
+                return;
+
+            Eventing::MouseScrollEvent scrollEvent(
+                { .X = offsetX, .Y = offsetY });
+            current->Invoke(scrollEvent);
         };
 
         glfwSetScrollCallback(m_window, scrollCallback);
 
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
         auto resizeCallback = [](GLFWwindow* window, int width, int height) {
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-            if (current) {
-                Eventing::WindowResizeEvent resizeEvent(
-                    { .Width = width, .Height = height });
-                current->Invoke(resizeEvent);
-            }
+            if (!current)
+                return;
+
+            Eventing::WindowResizeEvent resizeEvent(
+                { .Width = width, .Height = height });
+            current->Invoke(resizeEvent);
         };
 
         glfwSetWindowSizeCallback(m_window, resizeCallback);
 
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
         auto framebufferResizeCallback = [](GLFWwindow* window, int width,
                                             int height) {
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-            if (current) {
-                Eventing::FramebufferResizeEvent resizeEvent(
-                    { .Width = width, .Height = height });
-                current->Invoke(resizeEvent);
-            }
+            if (!current)
+                return;
+
+            Eventing::FramebufferResizeEvent resizeEvent(
+                { .Width = width, .Height = height });
+            current->Invoke(resizeEvent);
         };
 
         glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
 
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
         auto moveCallback = [](GLFWwindow* window, int x, int y) {
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-            if (current) {
-                Utils::PositionInt32 pos { .X = x, .Y = y };
-                Eventing::WindowMoveEvent moveEvent(pos);
-                current->Invoke(moveEvent);
-            }
+            if (!current)
+                return;
+
+            Eventing::WindowMoveEvent moveEvent({ .X = x, .Y = y });
+            current->Invoke(moveEvent);
         };
 
         glfwSetWindowPosCallback(m_window, moveCallback);
@@ -221,16 +235,17 @@ namespace Window
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-            if (current) {
-                if (iconified == GLFW_TRUE) {
-                    Eventing::WindowMinimizeEvent minEvent;
-                    current->Invoke(minEvent);
-                }
+            if (!current)
+                return;
 
-                if (iconified == GLFW_FALSE) {
-                    Eventing::WindowMaximizeEvent maxEvent;
-                    current->Invoke(maxEvent);
-                }
+            if (iconified == GLFW_TRUE) {
+                Eventing::WindowMinimizeEvent minEvent;
+                current->Invoke(minEvent);
+            }
+
+            if (iconified == GLFW_FALSE) {
+                Eventing::WindowMaximizeEvent maxEvent;
+                current->Invoke(maxEvent);
             }
         };
 
@@ -240,16 +255,17 @@ namespace Window
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-            if (current) {
-                if (focused == GLFW_TRUE) {
-                    Eventing::WindowGainFocusEvent gainEvent;
-                    current->Invoke(gainEvent);
-                }
+            if (!current)
+                return;
 
-                if (focused == GLFW_FALSE) {
-                    Eventing::WindowLostFocusEvent lostEvent;
-                    current->Invoke(lostEvent);
-                }
+            if (focused == GLFW_TRUE) {
+                Eventing::WindowGainFocusEvent gainEvent;
+                current->Invoke(gainEvent);
+            }
+
+            if (focused == GLFW_FALSE) {
+                Eventing::WindowLostFocusEvent lostEvent;
+                current->Invoke(lostEvent);
             }
         };
 
@@ -259,36 +275,33 @@ namespace Window
             GLFW* current =
                 static_cast<GLFW*>(glfwGetWindowUserPointer(window));
 
-            if (current) {
-                Eventing::WindowCloseEvent closeEvent;
-                current->Invoke(closeEvent);
-            }
+            if (!current)
+                return;
+
+            Eventing::WindowCloseEvent closeEvent;
+            current->Invoke(closeEvent);
         };
 
         glfwSetWindowCloseCallback(m_window, closeCallback);
     }
 
-    void GLFW::onResize(int32_t width, int32_t height)
+    void GLFW::onResize(Utils::SizeInt32 size)
     {
         if (m_fullscreen)
             return;
 
-        m_width = width;
-        m_height = height;
+        m_size = size;
     }
 
-    void GLFW::onMove(int32_t x, int32_t y)
+    void GLFW::onMove(Utils::PositionInt32 pos)
     {
         if (m_fullscreen)
             return;
 
-        m_posX = x;
-        m_posY = y;
-
-        Utils::PositionInt32 pos { .X = m_posX, .Y = m_posY };
+        m_pos = pos;
 
         if (m_monitor)
-            m_monitor->UpdateMonitor(pos);
+            m_monitor->UpdateMonitor(m_pos);
     }
 
     void GLFW::CloseWindow()
@@ -306,32 +319,30 @@ namespace Window
         glfwMakeContextCurrent(nullptr);
     }
 
-    void GLFW::SetSize(int32_t width, int32_t height)
+    void GLFW::SetSize(Utils::SizeInt32 size)
     {
-        glfwSetWindowSize(m_window, width, height);
+        glfwSetWindowSize(m_window, size.Width, size.Height);
     }
 
-    void GLFW::SetPosition(int32_t x, int32_t y)
+    void GLFW::SetPosition(Utils::PositionInt32 pos)
     {
-        glfwSetWindowPos(m_window, x, y);
+        glfwSetWindowPos(m_window, pos.X, pos.Y);
     }
 
-    void GLFW::SetMinimumSize(int32_t width, int32_t height)
+    void GLFW::SetMinimumSize(Utils::SizeInt32 size)
     {
-        m_minWidth = width;
-        m_minHeight = height;
+        m_minSize = size;
 
-        glfwSetWindowSizeLimits(m_window, m_minWidth, m_minHeight, m_maxWidth,
-                                m_maxHeight);
+        glfwSetWindowSizeLimits(m_window, m_minSize.Width, m_minSize.Height,
+                                m_maxSize.Width, m_maxSize.Height);
     }
 
-    void GLFW::SetMaximumSize(int32_t width, int32_t height)
+    void GLFW::SetMaximumSize(Utils::SizeInt32 size)
     {
-        m_maxWidth = width;
-        m_maxHeight = height;
+        m_maxSize = size;
 
-        glfwSetWindowSizeLimits(m_window, m_minWidth, m_minHeight, m_maxWidth,
-                                m_maxHeight);
+        glfwSetWindowSizeLimits(m_window, m_minSize.Width, m_minSize.Height,
+                                m_maxSize.Width, m_maxSize.Height);
     }
 
     void GLFW::SetFullscreen(bool value)
@@ -340,13 +351,14 @@ namespace Window
 
         if (m_fullscreen && m_monitor) {
             VideoMode mode = m_monitor->GetVideoMode();
-            const auto [posX, posY] = m_monitor->GetPosition();
-            glfwSetWindowMonitor(m_window, m_monitor->GetMonitor(), posX, posY,
-                                 mode.Size.Width, mode.Size.Height,
+            Utils::PositionInt32 pos = m_monitor->GetPosition();
+            glfwSetWindowMonitor(m_window, m_monitor->GetMonitor(), pos.X,
+                                 pos.Y, mode.Size.Width, mode.Size.Height,
                                  m_refreshRate);
-        } else
-            glfwSetWindowMonitor(m_window, nullptr, m_posX, m_posY, m_width,
-                                 m_height, m_refreshRate);
+        } else {
+            glfwSetWindowMonitor(m_window, nullptr, m_pos.X, m_pos.Y,
+                                 m_size.Width, m_size.Height, m_refreshRate);
+        }
     }
 
     void GLFW::SetTitle(const std::string& title)
@@ -463,35 +475,34 @@ namespace Window
         return m_title;
     }
 
-    std::tuple<int32_t, int32_t> GLFW::GetSize() const
+    Utils::SizeInt32 GLFW::GetSize() const
     {
-        int32_t width = -1;
-        int32_t height = -1;
-        glfwGetWindowSize(m_window, &width, &height);
-        return { width, height };
+        Utils::SizeInt32 size { .Width = DONT_CARE, .Height = DONT_CARE };
+        glfwGetWindowSize(m_window, &size.Width, &size.Height);
+        return size;
     }
 
-    std::tuple<int32_t, int32_t> GLFW::GetMinimumSize() const
+    Utils::SizeInt32 GLFW::GetMinimumSize() const
     {
-        return { m_minWidth, m_minHeight };
+        return m_minSize;
     }
 
-    std::tuple<int32_t, int32_t> GLFW::GetMaximumSize() const
+    Utils::SizeInt32 GLFW::GetMaximumSize() const
     {
-        return { m_maxWidth, m_maxHeight };
+        return m_maxSize;
     }
 
-    std::tuple<int32_t, int32_t> GLFW::GetPosition() const
+    Utils::PositionInt32 GLFW::GetPosition() const
     {
-        int32_t x = -1;
-        int32_t y = -1;
-        glfwGetWindowPos(m_window, &x, &y);
-        return { x, y };
+        Utils::PositionInt32 pos { .X = DONT_CARE, .Y = DONT_CARE };
+
+        glfwGetWindowPos(m_window, &pos.X, &pos.Y);
+        return pos;
     }
 
     Utils::SizeInt32 GLFW::GetFramebufferSize() const
     {
-        Utils::SizeInt32 size { .Width = -1, .Height = -1 };
+        Utils::SizeInt32 size { .Width = DONT_CARE, .Height = DONT_CARE };
         glfwGetFramebufferSize(m_window, &size.Width, &size.Height);
         return size;
     }

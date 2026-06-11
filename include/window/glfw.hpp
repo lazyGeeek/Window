@@ -18,21 +18,19 @@ namespace Window
     struct WindowInit
     {
         std::string Title = "";
-
-        int32_t Width = 1280;
-        int32_t Height = 720;
+        Utils::SizeInt32 Size { .Width = 1280, .Height = 720 };
     };
 
     class GLFW : public Utils::NonCopyable, public Eventing::Dispatcher
     {
     public:
-        GLFW(WindowInit windowInit = {});
+        GLFW(const WindowInit& windowInit = {});
         ~GLFW() override;
 
-        void SetSize(int32_t width, int32_t height);
-        void SetPosition(int32_t x, int32_t y);
-        void SetMinimumSize(int32_t width, int32_t height);
-        void SetMaximumSize(int32_t width, int32_t height);
+        void SetSize(Utils::SizeInt32 size);
+        void SetPosition(Utils::PositionInt32 pos);
+        void SetMinimumSize(Utils::SizeInt32 size);
+        void SetMaximumSize(Utils::SizeInt32 size);
         void SetFullscreen(bool value);
         void SetTitle(const std::string& title);
         void SetVsync(bool vsync);
@@ -65,10 +63,10 @@ namespace Window
 
         [[nodiscard]] std::string GetTitle() const;
 
-        [[nodiscard]] std::tuple<int32_t, int32_t> GetSize() const;
-        [[nodiscard]] std::tuple<int32_t, int32_t> GetMinimumSize() const;
-        [[nodiscard]] std::tuple<int32_t, int32_t> GetMaximumSize() const;
-        [[nodiscard]] std::tuple<int32_t, int32_t> GetPosition() const;
+        [[nodiscard]] Utils::SizeInt32 GetSize() const;
+        [[nodiscard]] Utils::SizeInt32 GetMinimumSize() const;
+        [[nodiscard]] Utils::SizeInt32 GetMaximumSize() const;
+        [[nodiscard]] Utils::PositionInt32 GetPosition() const;
         [[nodiscard]] Utils::SizeInt32 GetFramebufferSize() const;
 
         [[nodiscard]] bool HasVsync() const;
@@ -87,22 +85,18 @@ namespace Window
         void createGLFWWindow();
         void bindEventCallbacks();
 
-        void onResize(int32_t width, int32_t height);
-        void onMove(int32_t x, int32_t y);
+        void onResize(Utils::SizeInt32 size);
+        void onMove(Utils::PositionInt32 pos);
 
         GLFWwindow* m_window = nullptr;
         std::unique_ptr<Monitor> m_monitor = nullptr;
 
         std::string m_title = "";
 
-        int32_t m_width = 1280;
-        int32_t m_height = 720;
-        int32_t m_minWidth = DONT_CARE;
-        int32_t m_minHeight = DONT_CARE;
-        int32_t m_maxWidth = DONT_CARE;
-        int32_t m_maxHeight = DONT_CARE;
-        int32_t m_posX = DONT_CARE;
-        int32_t m_posY = DONT_CARE;
+        Utils::SizeInt32 m_size { .Width = 1280, .Height = 720 };
+        Utils::SizeInt32 m_minSize { .Width = DONT_CARE, .Height = DONT_CARE };
+        Utils::SizeInt32 m_maxSize { .Width = DONT_CARE, .Height = DONT_CARE };
+        Utils::PositionInt32 m_pos { .X = DONT_CARE, .Y = DONT_CARE };
 
         bool m_fullscreen = false;
         bool m_decorated = true;

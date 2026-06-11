@@ -10,11 +10,8 @@ namespace Window::Test
 {
     inline WindowInit MakeTestWindowInit()
     {
-        return WindowInit {
-            .Title = "WindowTests",
-            .Width = 320,
-            .Height = 240,
-        };
+        return WindowInit { .Title = "WindowTests",
+                            .Size = { .Width = 320, .Height = 240 } };
     }
 
     class GlfwFixture : public ::testing::Test
