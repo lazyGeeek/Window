@@ -370,7 +370,9 @@ namespace Window
     void GLFW::SetVsync(bool vsync)
     {
         m_vsync = vsync;
+#ifndef WINDOW_USE_VULKAN
         glfwSwapInterval(vsync ? 1 : 0);
+#endif
     }
 
     void GLFW::SetShouldClose(bool value) const

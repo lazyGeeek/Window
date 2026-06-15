@@ -8,6 +8,11 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+if(WINDOW_USE_VULKAN)
+    add_compile_definitions(WINDOW_USE_VULKAN)
+    find_package(Vulkan REQUIRED)
+endif()
+
 string(TOLOWER "${CMAKE_SYSTEM_NAME}" WINDOW_OS)
 string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" WINDOW_ARCH)
 
@@ -21,6 +26,10 @@ file(GLOB_RECURSE WINDOW_TEST_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
 add_executable(window_tests ${WINDOW_TEST_SOURCES})
+
+if(WINDOW_USE_VULKAN)
+    target_link_libraries(window_tests PRIVATE Vulkan::Vulkan)
+endif()
 
 target_link_libraries(window_tests PRIVATE GTest::gtest_main Window)
 
